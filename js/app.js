@@ -2,6 +2,7 @@
 import { createEngine, normText } from './engine.js';
 import { mountPanel } from './panel.js';
 import { pickAdapter } from './adapters/index.js';
+import { decodePrompt } from './config.js';
 
 export const PRESET_PROMPTS = {
   mamazon: 'Mamazonで「ノートパソコン」を探す。価格 100000円以下、評価4以上、「価格の安い順」で並び替える。購入はしない。',
@@ -12,16 +13,26 @@ const wordsOf = (...xs) => xs.flatMap((x) => String(x || '').split(/[\s.\-_/:|�
 
 /** @param {{host:Element, mode:'demo'|'bookmarklet', adapter?:object, ctx?:object, css?:string, onClose?:Function, promptFor?:Function}} o */
 export function startApp(o) {
-  const adapter = o.adapter || pickAdapter(location.hostname, globalThis.JEV_ADAPTER);
-  const panel = mountPanel(o.host, { mode: o.mode, css: o.css, onClose: o.onClose, dock: o.dock });
+  // inside the rewriting proxy the real site is o.proxyHost (location.hostname is the proxy's)
+  const siteHost = o.proxyHost || location.hostname;
+  const adapter = o.adapter || pickAdapter(siteHost, globalThis.JEV_ADAPTER);
+  const panel = mountPanel(o.host, { mode: o.mode, css: o.css, onClose: o.onClose, dock: o.dock, proxyHost: o.proxyHost });
   const hash = (location.hash.match(/preset=(\w+)/) || [])[1];
   const initial = (hash && PRESET_PROMPTS[hash]) || (hash === 'suumoja' && adapter.defaultPrompt) || adapter.defaultPrompt;
   panel.setPrompt(initial);
-  const persistKey = adapter.id === 'demo' ? null : `jev.pending.${location.hostname}`;
+  // handed over by the app's 開く: prefill ONCE, drop the hash, never auto-start
+  if (o.mode === 'bookmarklet') {
+    const m = /^#jev-prompt=([A-Za-z0-9_-]*)$/.exec(location.hash);
+    if (m) {
+      const t = decodePrompt(m[1]); if (t) panel.setPrompt(t);
+      try { history.replaceState(history.state, '', location.pathname + location.search); } catch { /* ignore */ }
+    }
+  }
+  const persistKey = adapter.id === 'demo' ? null : `jev.pending.${siteHost}`;
   const eng = createEngine({ panel, shield: adapter.shield, persistKey });
   const ctx = { hints: adapter.hints || {}, get jevKey() { return panel.getKey(); }, fetchFn: (...a) => fetch(...a), site: o.ctx?.site };
   // site-name words (e.g. 'Mamazonで…') are not search terms
-const ignore = [...wordsOf(location.hostname, document.title), 'Mamazon', 'Personal', 'Form', 'SUUMO', 'SUUMOじゃ', 'スーモジャ'];
+const ignore = [...wordsOf(siteHost, document.title), 'Mamazon', 'Personal', 'Form', 'SUUMO', 'SUUMOじゃ', 'スーモジャ'];
   panel.onPreset((p, here) => { if (here) { panel.setPrompt(p.id === 'suumoja' ? adapter.defaultPrompt : PRESET_PROMPTS[p.id]); } });
 
   const pending = eng.pending();
