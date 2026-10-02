@@ -2,6 +2,7 @@
 import { fmtTimer } from './engine.js';
 import { KEY_STORAGE } from './generic/jev.js';
 import { BUILD_ID } from './version.js';
+import { proxyUrl, originalUrl, UNSUPPORTED_TEXT } from './config.js';
 
 export const PRESETS = [
   { id: 'mamazon', label: '🛒 Mamazon：パソコンを最安で購入', page: 'mamazon.html' },
@@ -97,7 +98,8 @@ export function mountPanel(host, opts = {}) {
   // ---- tab row ----
   const loc = globalThis.location;
   if (o.mode === 'bookmarklet') {
-    $('#tab-ro').textContent = `${document.title || '(無題)'} — ${loc.href}`;
+    // inside the rewriting proxy the page URL is /p/<host>/...: show the ORIGINAL site URL instead
+    $('#tab-ro').textContent = `${document.title || '(無題)'} — ${(o.proxyHost && originalUrl(loc, o.proxyHost)) || loc.href}`;
   } else {
     const sel = $('#tab-select'); const cur = (loc.pathname.split('/').pop() || 'index.html');
     sel.innerHTML = DEMO_SITES.map((s) => `<option value="${s.page}">${esc(s.title)} — ${esc(loc.origin)}/${esc(s.page)}</option>`).join('') + '<option value="__url">その他のURLを入力…</option>';
@@ -105,13 +107,23 @@ export function mountPanel(host, opts = {}) {
     const urlRow = $('#url-row');
     const urlEl = $('#tab-url');
     const parseUrl = (v) => { v = v.trim(); if (!v) return null; try { const u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`); return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u : null; } catch { return null; } };
+    // status line + link to the manual (bookmarklet) steps
+    const showUnsupported = () => {
+      el.status.dataset.state = 'error'; el.status.textContent = UNSUPPORTED_TEXT;
+      const a = document.createElement('a'); a.href = 'bookmarklet.html'; a.textContent = 'くわしい手順'; a.className = 'status-link';
+      el.status.append(' ', a);
+    };
+    // external URL: supported site -> same tab to the rewriting proxy (prompt travels in the #hash); else explain. Returns true when handled.
+    const goExternal = (u) => {
+      const t = proxyUrl(u, el.prompt.value);
+      if (t) loc.href = t; else showUnsupported();
+      return true;
+    };
     const openExternal = () => {
       const u = parseUrl(urlEl.value);
       if (!u) return;
       if (u.origin === loc.origin) { loc.href = u.href; return; }
-      let w = null;
-      try { w = window.open(u.href, '_blank', 'noopener'); } catch { /* blocked */ }
-      if (!w) loc.href = u.href;
+      goExternal(u);
     };
     const box = $('#tab-box');
     const showUrl = (on) => { urlRow.hidden = !on; sel.hidden = on; box.dataset.mode = on ? 'url' : 'select'; };
@@ -119,8 +131,8 @@ export function mountPanel(host, opts = {}) {
     sel.addEventListener('change', () => { if (sel.value === '__url') showUrl(true); else { showUrl(false); if (sel.value !== cur) loc.href = sel.value; } });
     urlEl.addEventListener('keydown', (e) => { if (e.key === 'Escape') { showUrl(false); resetSel(); } else if (e.key === 'Enter') { e.preventDefault(); openExternal(); } });
     $('#tab-open').addEventListener('click', openExternal);
-    // a web page cannot drive another origin: say so instead of silently doing nothing
-    api.externalBlocked = () => { if (urlRow.hidden) return false; const u = parseUrl(urlEl.value); return !!u && u.origin !== loc.origin; };
+    // a web page cannot drive another origin itself: Start on an external URL goes through the proxy (or explains)
+    api.handleExternal = () => { if (urlRow.hidden) return false; const u = parseUrl(urlEl.value); return !!u && u.origin !== loc.origin && goExternal(u); };
     // presets open the demo page and fill the prompt
     root.querySelectorAll('.preset').forEach((b) => b.addEventListener('click', () => {
       const p = PRESETS[Number(b.dataset.preset) - 1]; const here = cur === p.page;
@@ -141,12 +153,7 @@ export function mountPanel(host, opts = {}) {
   // ---- buttons ----
   el.start.addEventListener('click', () => {
     if (el.start.disabled) return;
-    if (api.externalBlocked?.()) {
-      el.status.dataset.state = 'error';
-      el.status.textContent = '⚠ 外部サイトはこの画面からは操作できません。拡張機能かブックマークレットで使えます。';
-      const a = document.createElement('a'); a.href = 'bookmarklet.html'; a.textContent = 'くわしい手順'; a.className = 'status-link';
-      el.status.append(' ', a); return;
-    }
+    if (api.handleExternal?.()) return;
     handlers.start.forEach((f) => f());
   });
   el.stop.addEventListener('click', () => { if (!el.stop.disabled) handlers.stop.forEach((f) => f()); });

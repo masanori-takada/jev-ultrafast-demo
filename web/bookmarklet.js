@@ -365,13 +365,48 @@ return { id: a.choice, confidence: a.confidence ?? null, probabilities: a.probab
 return {JEV_ENDPOINT, JEV_MODEL, KEY_STORAGE, askJev};
 };
 __d["version.js"] = function () {
-const BUILD_ID = 'build 2026-10-03 v2';
+const BUILD_ID = 'build 2026-10-03 v3';
 return {BUILD_ID};
+};
+__d["config.js"] = function () {
+const PROXY_BASE = 'https://jev-ultrafast-demo.vercel.app';
+const PROXY_HOSTS = ['suumo.jp', 'amazon.co.jp', 'amazon.com', 'indeed.com', 'jp.indeed.com', 'doda.jp', 'rikunabi.com',
+'mynavi.jp', 'green-japan.com', 'wantedly.com', 'kakaku.com', 'rakuten.co.jp', 'zozo.jp', 'mercari.com'];
+const isSupportedHost = (h) => {
+h = String(h || '').toLowerCase();
+return /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/.test(h) && !/^[\d.]+$/.test(h) && PROXY_HOSTS.some((a) => h === a || h.endsWith('.' + a));
+};
+const UNSUPPORTED_TEXT = `このサイトはまだ対応していません（対応: ${PROXY_HOSTS.slice(0, 2).join(', ')} …）`;
+/** UTF-8 text <-> base64url (the prompt travels in the URL #hash: never sent to any server). */
+function encodePrompt(text) {
+const bin = Array.from(new TextEncoder().encode(String(text)), (b) => String.fromCharCode(b)).join('');
+return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function decodePrompt(b64) {
+try {
+const s = String(b64).replace(/-/g, '+').replace(/_/g, '/');
+const bin = atob(s + '='.repeat((4 - (s.length % 4)) % 4));
+return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
+} catch { return null; }
+}
+/** https://suumo.jp/sp/?a=1 + prompt -> `${PROXY_BASE}/p/suumo.jp/sp/?a=1#jev-prompt=...` (null when the host is not supported). */
+function proxyUrl(u, prompt, base = PROXY_BASE) {
+if (!isSupportedHost(u.hostname) || u.port) return null;
+return `${base}/p/${u.hostname.toLowerCase()}${u.pathname}${u.search}#jev-prompt=${encodePrompt(prompt || '')}`;
+}
+/** Original site URL of a proxied page: /p/<host>/x?y -> https://<host>/x?y (null when not under /p/<host>/). */
+function originalUrl(loc, proxyHost) {
+const pre = `/p/${proxyHost}`;
+if (!proxyHost || (loc.pathname !== pre && !loc.pathname.startsWith(pre + '/'))) return null;
+return `https://${proxyHost}${loc.pathname.slice(pre.length) || '/'}${loc.search}`;
+}
+return {PROXY_BASE, PROXY_HOSTS, isSupportedHost, UNSUPPORTED_TEXT, encodePrompt, decodePrompt, proxyUrl, originalUrl};
 };
 __d["panel.js"] = function () {
 const {fmtTimer} = __r("engine.js");
 const {KEY_STORAGE} = __r("generic/jev.js");
 const {BUILD_ID} = __r("version.js");
+const {proxyUrl, originalUrl, UNSUPPORTED_TEXT} = __r("config.js");
 const PRESETS = [
 { id: 'mamazon', label: '🛒 Mamazon：パソコンを最安で購入', page: 'mamazon.html' },
 { id: 'suumoja', label: '🏠 SUUMOじゃ：東京1LDKを探して問い合わせ', page: 'index.html' },
@@ -459,7 +494,7 @@ const api = { root, el, panel, onStart: (f) => handlers.start.push(f), onStop: (
 setTimeout(() => { el.badge.dataset.state = 'ok'; el.badge.textContent = 'サーバー接続OK'; }, 400);
 const loc = globalThis.location;
 if (o.mode === 'bookmarklet') {
-$('#tab-ro').textContent = `${document.title || '(無題)'} — ${loc.href}`;
+$('#tab-ro').textContent = `${document.title || '(無題)'} — ${(o.proxyHost && originalUrl(loc, o.proxyHost)) || loc.href}`;
 } else {
 const sel = $('#tab-select'); const cur = (loc.pathname.split('/').pop() || 'index.html');
 sel.innerHTML = DEMO_SITES.map((s) => `<option value="${s.page}">${esc(s.title)} — ${esc(loc.origin)}/${esc(s.page)}</option>`).join('') + '<option value="__url">その他のURLを入力…</option>';
@@ -467,13 +502,21 @@ sel.value = DEMO_SITES.some((s) => s.page === cur) ? cur : 'sites.html';
 const urlRow = $('#url-row');
 const urlEl = $('#tab-url');
 const parseUrl = (v) => { v = v.trim(); if (!v) return null; try { const u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`); return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u : null; } catch { return null; } };
+const showUnsupported = () => {
+el.status.dataset.state = 'error'; el.status.textContent = UNSUPPORTED_TEXT;
+const a = document.createElement('a'); a.href = 'bookmarklet.html'; a.textContent = 'くわしい手順'; a.className = 'status-link';
+el.status.append(' ', a);
+};
+const goExternal = (u) => {
+const t = proxyUrl(u, el.prompt.value);
+if (t) loc.href = t; else showUnsupported();
+return true;
+};
 const openExternal = () => {
 const u = parseUrl(urlEl.value);
 if (!u) return;
 if (u.origin === loc.origin) { loc.href = u.href; return; }
-let w = null;
-try { w = window.open(u.href, '_blank', 'noopener'); } catch { /* blocked */ }
-if (!w) loc.href = u.href;
+goExternal(u);
 };
 const box = $('#tab-box');
 const showUrl = (on) => { urlRow.hidden = !on; sel.hidden = on; box.dataset.mode = on ? 'url' : 'select'; };
@@ -481,7 +524,7 @@ const resetSel = () => { sel.value = DEMO_SITES.some((s) => s.page === cur) ? cu
 sel.addEventListener('change', () => { if (sel.value === '__url') showUrl(true); else { showUrl(false); if (sel.value !== cur) loc.href = sel.value; } });
 urlEl.addEventListener('keydown', (e) => { if (e.key === 'Escape') { showUrl(false); resetSel(); } else if (e.key === 'Enter') { e.preventDefault(); openExternal(); } });
 $('#tab-open').addEventListener('click', openExternal);
-api.externalBlocked = () => { if (urlRow.hidden) return false; const u = parseUrl(urlEl.value); return !!u && u.origin !== loc.origin; };
+api.handleExternal = () => { if (urlRow.hidden) return false; const u = parseUrl(urlEl.value); return !!u && u.origin !== loc.origin && goExternal(u); };
 root.querySelectorAll('.preset').forEach((b) => b.addEventListener('click', () => {
 const p = PRESETS[Number(b.dataset.preset) - 1]; const here = cur === p.page;
 for (const f of handlers.tab) f(p, here);
@@ -497,12 +540,7 @@ $('#jev-key-clear').addEventListener('click', () => { keyEl.value = ''; memKey =
 api.getKey = () => keyEl.value.trim() || null;
 el.start.addEventListener('click', () => {
 if (el.start.disabled) return;
-if (api.externalBlocked?.()) {
-el.status.dataset.state = 'error';
-el.status.textContent = '⚠ 外部サイトはこの画面からは操作できません。拡張機能かブックマークレットで使えます。';
-const a = document.createElement('a'); a.href = 'bookmarklet.html'; a.textContent = 'くわしい手順'; a.className = 'status-link';
-el.status.append(' ', a); return;
-}
+if (api.handleExternal?.()) return;
 handlers.start.forEach((f) => f());
 });
 el.stop.addEventListener('click', () => { if (!el.stop.disabled) handlers.stop.forEach((f) => f()); });
@@ -1052,6 +1090,7 @@ __d["app.js"] = function () {
 const {createEngine, normText} = __r("engine.js");
 const {mountPanel} = __r("panel.js");
 const {pickAdapter} = __r("adapters/index.js");
+const {decodePrompt} = __r("config.js");
 const PRESET_PROMPTS = {
 mamazon: 'Mamazonで「ノートパソコン」を探す。価格 100000円以下、評価4以上、「価格の安い順」で並び替える。購入はしない。',
 form: 'Personal Formで、氏名=「山田 太郎」、フリガナ=「ヤマダ タロウ」、メールアドレス=「taro@example.com」、電話番号=「09012345678」、生年月日=「1990-01-15」、都道府県=「東京都」、住所=「千代田区架空1-2-3」、職業=「会社員」、希望する連絡方法=「メール」、興味のあるテーマ=「生成AI」、「入力内容を確認しました」にチェックして「送信（デモ）」を押す。備考は空欄のまま。「架空の個人情報をコピーする」は押さない。',
@@ -1059,15 +1098,23 @@ form: 'Personal Formで、氏名=「山田 太郎」、フリガナ=「ヤマダ
 const wordsOf = (...xs) => xs.flatMap((x) => String(x || '').split(/[\s.\-_/:|—]+/)).filter((w) => w.length > 1);
 /** @param {{host:Element, mode:'demo'|'bookmarklet', adapter?:object, ctx?:object, css?:string, onClose?:Function, promptFor?:Function}} o */
 function startApp(o) {
-const adapter = o.adapter || pickAdapter(location.hostname, globalThis.JEV_ADAPTER);
-const panel = mountPanel(o.host, { mode: o.mode, css: o.css, onClose: o.onClose, dock: o.dock });
+const siteHost = o.proxyHost || location.hostname;
+const adapter = o.adapter || pickAdapter(siteHost, globalThis.JEV_ADAPTER);
+const panel = mountPanel(o.host, { mode: o.mode, css: o.css, onClose: o.onClose, dock: o.dock, proxyHost: o.proxyHost });
 const hash = (location.hash.match(/preset=(\w+)/) || [])[1];
 const initial = (hash && PRESET_PROMPTS[hash]) || (hash === 'suumoja' && adapter.defaultPrompt) || adapter.defaultPrompt;
 panel.setPrompt(initial);
-const persistKey = adapter.id === 'demo' ? null : `jev.pending.${location.hostname}`;
+if (o.mode === 'bookmarklet') {
+const m = /^#jev-prompt=([A-Za-z0-9_-]*)$/.exec(location.hash);
+if (m) {
+const t = decodePrompt(m[1]); if (t) panel.setPrompt(t);
+try { history.replaceState(history.state, '', location.pathname + location.search); } catch { /* ignore */ }
+}
+}
+const persistKey = adapter.id === 'demo' ? null : `jev.pending.${siteHost}`;
 const eng = createEngine({ panel, shield: adapter.shield, persistKey });
 const ctx = { hints: adapter.hints || {}, get jevKey() { return panel.getKey(); }, fetchFn: (...a) => fetch(...a), site: o.ctx?.site };
-const ignore = [...wordsOf(location.hostname, document.title), 'Mamazon', 'Personal', 'Form', 'SUUMO', 'SUUMOじゃ', 'スーモジャ'];
+const ignore = [...wordsOf(siteHost, document.title), 'Mamazon', 'Personal', 'Form', 'SUUMO', 'SUUMOじゃ', 'スーモジャ'];
 panel.onPreset((p, here) => { if (here) { panel.setPrompt(p.id === 'suumoja' ? adapter.defaultPrompt : PRESET_PROMPTS[p.id]); } });
 const pending = eng.pending();
 if (pending && persistKey) panel.setStatusText(`前回の続き（ステップ${pending.idx + 1}）から再開できます`);
@@ -1092,11 +1139,12 @@ const {startApp} = __r("app.js");
 (function jevBookmarklet() {
 const old = document.getElementById('jev-root');
 if (old) { old.remove(); return; } // second tap toggles the panel off
+const proxyHost = (document.currentScript && document.currentScript.getAttribute('data-jev-proxy-host')) || '';
 const host = document.createElement('div');
 host.id = 'jev-root';
 host.style.cssText = 'all:initial;position:fixed;z-index:2147483647;left:0;bottom:0;width:0;height:0';
 document.documentElement.appendChild(host);
-startApp({ host, mode: 'bookmarklet', css: typeof PANEL_CSS === 'string' ? PANEL_CSS : '', dock: !!globalThis.__JEV_EXT__, onClose: () => host.remove() });
+startApp({ host, mode: 'bookmarklet', css: typeof PANEL_CSS === 'string' ? PANEL_CSS : '', dock: !!globalThis.__JEV_EXT__, proxyHost, onClose: () => host.remove() });
 })();
 return {};
 };

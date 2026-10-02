@@ -197,3 +197,17 @@ test('sw.js cache name equals the build id (version.js) and is shown in the pane
   assert.match(BUILD_ID, /^build \d{4}-\d{2}-\d{2} v\d+$/);
   assert.ok(/cache: 'no-cache'/.test(sw) && /clients\.claim/.test(sw) && /skipWaiting/.test(sw));
 });
+
+import { PROXY_HOSTS, isSupportedHost, proxyUrl, originalUrl, encodePrompt, decodePrompt, UNSUPPORTED_TEXT } from '../web/js/config.js';
+test('config: prompt base64url round-trips (UTF-8), proxyUrl and originalUrl', () => {
+  for (const t of ['', 'a', '東京 1LDK 10万円以下 ✓ 😀', '??>>~~']) { const e = encodePrompt(t); assert.match(e, /^[A-Za-z0-9_-]*$/); assert.equal(decodePrompt(e), t); }
+  assert.equal(proxyUrl(new URL('https://suumo.jp/sp/x?a=1#z'), 'hi', 'https://p.test'), 'https://p.test/p/suumo.jp/sp/x?a=1#jev-prompt=' + encodePrompt('hi'));
+  assert.equal(proxyUrl(new URL('https://example.org/'), 'hi'), null);
+  assert.equal(proxyUrl(new URL('https://suumo.jp:8443/'), 'hi'), null);
+  assert.equal(isSupportedHost('www.suumo.jp'), true); assert.equal(isSupportedHost('suumo.jp.evil.com'), false); assert.equal(isSupportedHost('127.0.0.1'), false);
+  assert.equal(originalUrl({ pathname: '/p/suumo.jp/sp/x', search: '?a=1' }, 'suumo.jp'), 'https://suumo.jp/sp/x?a=1');
+  assert.equal(originalUrl({ pathname: '/p/suumo.jp', search: '' }, 'suumo.jp'), 'https://suumo.jp/');
+  assert.equal(originalUrl({ pathname: '/other', search: '' }, 'suumo.jp'), null);
+  assert.equal(PROXY_HOSTS.length, 14);
+  assert.equal(UNSUPPORTED_TEXT, 'このサイトはまだ対応していません（対応: suumo.jp, amazon.co.jp …）');
+});

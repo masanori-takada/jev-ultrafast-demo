@@ -303,11 +303,24 @@ for (const proj of PROJECTS) {
       await page.locator('#tab-url').pressSequentially('https://suumo.jp/sp/');
       await page.waitForTimeout(100);
       eq((await gap()).d, g0.d, 'typing an external URL changes no layout');
+      // supported site: Start goes to the proxy (same tab) with the prompt in the hash; nothing starts here
+      await page.route('https://jev-ultrafast-demo.vercel.app/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<title>proxy stub</title>' }));
+      const typed = '東京 1LDK 10万円以下 ✓'; await page.locator('#prompt').fill(typed);
+      await page.locator('#btn-start').click(); await page.waitForURL(/vercel\.app/);
+      const nu = new URL(page.url());
+      eq([nu.origin, nu.pathname], ['https://jev-ultrafast-demo.vercel.app', '/p/suumo.jp/sp/'], 'Start on suumo.jp URL navigates (same tab) to proxy');
+      eq(Buffer.from(nu.hash.slice('#jev-prompt='.length).replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'), typed, 'prompt travels base64url in hash');
+      await page.goBack(); await page.waitForSelector('#panel'); await openPanel(page);
+      await page.locator('#tab-select').selectOption('__url');
+      await page.locator('#tab-url').fill('https://example.org/x');
       await page.locator('#btn-start').click();
       const st = await page.locator('#status').textContent();
-      ok(st.includes('外部サイトはこの画面からは操作できません。拡張機能かブックマークレットで使えます。') && st.includes('くわしい手順'), 'start with external URL shows one-line status ' + st);
+      ok(st.includes('このサイトはまだ対応していません（対応: suumo.jp, amazon.co.jp …）') && st.includes('くわしい手順'), 'unsupported external URL shows status + link ' + st);
       eq(await page.locator('#status a[href="bookmarklet.html"]').count(), 1, 'status links to bookmarklet.html');
       eq(await page.locator('#btn-start').isDisabled(), false, 'start not running');
+      eq(page.url().includes('example.org'), false, 'did not navigate');
+      await page.locator('#tab-open').click();
+      ok((await page.locator('#status').textContent()).includes('まだ対応していません'), '開く with unsupported URL shows the same status');
       eq((await gap()).d, g0.d, 'status does not change prompt spacing');
       await page.locator('#tab-url').fill(`${BASE}/mamazon.html`);
       await page.locator('#tab-open').click(); await page.waitForURL(/mamazon\.html/);
@@ -315,14 +328,15 @@ for (const proj of PROJECTS) {
       await ctx.close();
     }
     {
-      // external URL + 開く opens a new tab
+      // 開く with a supported external URL navigates the same tab to the proxy
       const { ctx, page } = await newPage(proj);
+      await page.route('https://jev-ultrafast-demo.vercel.app/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: 'x' }));
       await page.goto(`${BASE}/sites.html`); await openPanel(page);
       await page.locator('#tab-select').selectOption('__url');
-      await page.locator('#tab-url').fill('https://example.com/');
-      await page.route('https://example.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: 'x' }));
-      const [pop] = await Promise.all([ctx.waitForEvent('page', { timeout: 3000 }).catch(() => null), page.locator('#tab-open').click()]);
-      ok(!!pop || /example\.com/.test(page.url()), 'external open: new tab (or same-tab fallback)');
+      await page.locator('#tab-url').fill('Amazon.co.jp/s?k=pc&page=2');
+      await page.locator('#tab-open').click(); await page.waitForURL(/vercel\.app/);
+      const u = new URL(page.url());
+      eq([u.pathname, u.search, u.hash.startsWith('#jev-prompt=')], ['/p/amazon.co.jp/s', '?k=pc&page=2', true], '開く: amazon URL -> proxy path+query+hash');
       await ctx.close();
     }
     {

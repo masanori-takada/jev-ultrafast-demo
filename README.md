@@ -11,7 +11,7 @@ AIエージェントパネル「Jev Ultrafast」の再現デモ（すべて架�
 ```
 node tests/serve.mjs          # http://127.0.0.1:4173/ （任意の静的ホストでも可。SWはHTTPS/localhost必須）
 node tools/build-bookmarklet.mjs   # web/bookmarklet.js と web/bookmarklet.html を生成
-npm test                      # node:test + Playwright e2e（/opt/pw-browsers の chromium を使用）
+npm test                      # unit + Playwright e2e + 拡張 + CSP + プロキシ（npm run test:proxy）。node:test + Playwright e2e（/opt/pw-browsers の chromium を使用）
 ```
 スマホでは「ホーム画面に追加」でPWAとして使えます。実サイトで使うには `web/bookmarklet.html`（iOS Safari / Android Chrome の手順付き）からブックマークレットを登録してください。
 
@@ -19,5 +19,5 @@ npm test                      # node:test + Playwright e2e（/opt/pw-browsers �
 
 ## 実サイト（suumo など）で使う
 - **PC（Chrome / Edge）**: `extension/` を「パッケージ化されていない拡張機能」として読み込み（手順は `extension/README.ja.md`、`npm run build:extension` で `dist/jev-ultrafast-extension.zip` も作成）。ツールバーのボタンで右側にパネルが出ます。
-- **スマホ**: アプリの「操作するタブ」にURLを入れると、ブックマークレットのコピー手順が出ます。
+- **スマホ（プロキシ経由）**: アプリの「操作するタブ」に対応サイト（suumo.jp、amazon.co.jp など）のURLを入れて「開く」を押すと、許可リスト限定の書き換えプロキシ経由でそのサイトがJevパネル付きで開き、指示文が入った状態になります（自動では始まりません）。プロキシは `proxy/`（Vercel、Root Directory を `proxy/` に。手順は `proxy/README.ja.md`）。**実サイトでの動作は未検証**で、ログイン・POST・重いアプリ・ボット対策のサイトでは動きません。対応外のサイトはブックマークレットの手順が出ます。
 - 他サイトのページに画面を出せるのは拡張機能かブックマークレットだけです（Webページ単体では不可）。

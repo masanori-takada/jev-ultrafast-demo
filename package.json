@@ -13,7 +13,8 @@
     "test:e2e": "node tests/e2e.mjs",
     "test:ext": "node tests/ext.mjs",
     "test:csp": "node tests/csp.mjs",
-    "test": "npm run test:unit && npm run test:e2e && npm run test:ext && npm run test:csp"
+    "test:proxy": "node --test tests/proxy.test.mjs && node tests/proxy-e2e.mjs",
+    "test": "npm run test:unit && npm run test:e2e && npm run test:ext && npm run test:csp && npm run test:proxy"
   },
   "devDependencies": { "playwright-core": "^1.56.1" }
 }
