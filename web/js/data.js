@@ -1,0 +1,30 @@
+// 24 fictional listings (deterministic). All names/places are fictional; not related to SUUMO/Recruit.
+const R = (id, name, art, o) => ({ mode: 'rent', type: 'マンション', mgmt: 6000, tags: ['おすすめ'], photos: 5, ...o, id, name, art,
+  priceLabel: o.priceLabel || `${o.price}万円` });
+
+export const LISTINGS = [
+  R('yoyogi', '風見ハイツ代々木', 'mountain', { price: 12.8, layout: '1LDK', size: 38.2, pref: '東京都', city: '渋谷区', station: '代々木駅', walk: 7, year: 2018, floor: '6階', tags: ['おすすめ', '南向き'], check: '南向き・角部屋', photos: 5 }),
+  R('sangenjaya', '月灯りレジデンス', 'tiger', { price: 9.6, layout: '1K', size: 25.4, pref: '東京都', city: '世田谷区', station: '三軒茶屋駅', walk: 5, year: 2021, floor: '8階', tags: ['築浅', '宅配BOX'], check: '宅配BOX・ペット相談', photos: 6 }),
+  { id: 'kiyosumi', name: '川辺の白い家', mode: 'buy', type: '一戸建て', price: 5680, priceLabel: '5,680万円', mgmt: 0, mgmtLabel: '', layout: '2LDK', size: 61.8, pref: '東京都', city: '江東区', station: '清澄白河駅', walk: 4, year: 2015, floor: '11階', tags: ['リノベ済', '眺望'], check: 'リノベ済・眺望良好', art: 'pier', photos: 7 },
+  R('komorebi', 'こもれび荘 202', 'shore', { price: 7.9, layout: '1DK', size: 29.1, type: 'アパート', pref: '東京都', city: '杉並区', station: '西荻窪駅', walk: 10, year: 1996, floor: '2階', tags: ['古民家', '庭付き'], check: '古民家・庭付き', photos: 8 }),
+  R('kagurazaka', '雨音メゾン神楽坂', 'bottles', { price: 14.5, layout: '1LDK', size: 41.3, pref: '東京都', city: '新宿区', station: '神楽坂駅', walk: 4, year: 2022, floor: '4階', tags: ['築浅', '楽器相談'], check: '築浅・楽器相談', photos: 6 }),
+  R('asagaya', '空色ルーフ阿佐ヶ谷', 'trees', { price: 9.1, layout: '1LDK', size: 34.8, pref: '東京都', city: '杉並区', station: '阿佐ヶ谷駅', walk: 8, year: 2009, floor: '5階', tags: ['屋上', 'ネット無料'], check: '屋上菜園・ネット無料', mgmtLabel: '管理費 6,000円・敷1 / 礼1', photos: 5 }),
+  R('nakano', 'ねこ町テラス中野', 'park', { price: 8.4, layout: '1K', size: 22.6, pref: '東京都', city: '中野区', station: '中野駅', walk: 9, year: 2005, floor: '3階', tags: ['ペット可', 'おすすめ'], check: 'ペット可・バストイレ別' }),
+  R('ikebukuro', 'ひだまりコート池袋', 'sky', { price: 11.2, layout: '2DK', size: 40.5, pref: '東京都', city: '豊島区', station: '池袋駅', walk: 12, year: 1999, floor: '7階', tags: ['ファミリー'], check: '2人入居可・南向き' }),
+  R('nerima', 'みどり坂ハイム練馬', 'facade', { price: 6.8, layout: '1R', size: 18.9, type: 'アパート', pref: '東京都', city: '練馬区', station: '練馬駅', walk: 6, year: 1989, floor: '1階', tags: ['格安'], check: '敷金礼金ゼロ' }),
+  R('kichijoji', '星見ヒルズ吉祥寺', 'sky', { price: 16.9, layout: '2LDK', size: 55.0, pref: '東京都', city: '武蔵野市', station: '吉祥寺駅', walk: 11, year: 2019, floor: '9階', tags: ['築浅', '眺望'], check: '眺望良好・オートロック' }),
+  R('shimokita', '雲間アパートメント下北沢', 'bottles', { price: 8.9, layout: '1DK', size: 27.8, type: 'アパート', pref: '東京都', city: '世田谷区', station: '下北沢駅', walk: 3, year: 2001, floor: '2階', tags: ['楽器相談'], check: '駅近・ロフト付き' }),
+  R('akabane', 'ぽかぽか荘赤羽', 'park', { price: 5.2, layout: '1R', size: 16.5, type: 'アパート', pref: '東京都', city: '北区', station: '赤羽駅', walk: 14, year: 1987, floor: '1階', tags: ['格安'], check: '都市ガス・家具付き' }),
+  R('kinshicho', '橋のたもと錦糸町', 'pier', { price: 10.8, layout: '1K', size: 26.4, pref: '東京都', city: '墨田区', station: '錦糸町駅', walk: 5, year: 2016, floor: '10階', tags: ['築浅', '宅配BOX'], check: '眺望良好・宅配BOX' }),
+  R('mitaka', '風のみち三鷹', 'trees', { price: 9.8, layout: '2K', size: 33.2, pref: '東京都', city: '三鷹市', station: '三鷹駅', walk: 13, year: 1994, floor: '3階', tags: ['ファミリー'], check: '駐輪場あり・南向き' }),
+  { id: 'tama-house', name: '丘の上の小さな家', mode: 'buy', type: '一戸建て', price: 3980, priceLabel: '3,980万円', mgmt: 0, mgmtLabel: '', layout: '3LDK', size: 84.7, pref: '東京都', city: '町田市', station: '町田駅', walk: 15, year: 2011, floor: '2階建', tags: ['庭付き'], check: '庭付き・駐車場2台', art: 'mountain', photos: 9 },
+  R('ota', 'さざなみ館大森', 'shore', { price: 7.3, layout: '1K', size: 21.0, type: 'アパート', pref: '東京都', city: '大田区', station: '大森駅', walk: 8, year: 2000, floor: '2階', tags: ['おすすめ'], check: 'バストイレ別・エアコン付' }),
+  R('yokohama', '潮風レジデンス横浜', 'pier', { price: 11.5, layout: '1LDK', size: 39.9, pref: '神奈川県', city: '横浜市中区', station: '馬車道駅', walk: 6, year: 2017, floor: '12階', tags: ['眺望', '築浅'], check: '海が見える・コンシェルジュ' }),
+  R('kawasaki', 'ことり荘川崎', 'facade', { price: 6.4, layout: '1R', size: 19.2, type: 'アパート', pref: '神奈川県', city: '川崎市川崎区', station: '川崎駅', walk: 10, year: 1992, floor: '2階', tags: ['格安'], check: '最上階・日当たり良好' }),
+  R('kamakura', '古都の縁側ハウス', 'park', { price: 13.2, layout: '2LDK', size: 58.3, type: '一戸建て', pref: '神奈川県', city: '鎌倉市', station: '鎌倉駅', walk: 12, year: 1985, floor: '2階建', tags: ['古民家', '庭付き'], check: '縁側・庭付き' }),
+  R('omiya', '銀杏タワー大宮', 'sky', { price: 8.7, layout: '1LDK', size: 36.1, pref: '埼玉県', city: 'さいたま市大宮区', station: '大宮駅', walk: 7, year: 2014, floor: '14階', tags: ['南向き'], check: '駅近・南向き' }),
+  R('kawagoe', ' 蔵の街ヴィラ川越', 'facade', { price: 7.1, layout: '2DK', size: 38.0, pref: '埼玉県', city: '川越市', station: '川越駅', walk: 15, year: 1998, floor: '3階', tags: ['ファミリー'], check: '駐車場付き' }),
+  R('urawa', 'はなまる荘浦和', 'bottles', { price: 5.9, layout: '1K', size: 20.3, type: 'アパート', pref: '埼玉県', city: 'さいたま市浦和区', station: '浦和駅', walk: 9, year: 1990, floor: '1階', tags: ['格安'], check: '学生歓迎' }),
+  R('funabashi', 'なぎさハイツ船橋', 'shore', { price: 6.9, layout: '1DK', size: 28.5, pref: '千葉県', city: '船橋市', station: '船橋駅', walk: 8, year: 2003, floor: '4階', tags: ['おすすめ'], check: '駅近・宅配BOX' }),
+  { id: 'chiba-house', name: '森の入口の平屋', mode: 'buy', type: '一戸建て', price: 2480, priceLabel: '2,480万円', mgmt: 0, mgmtLabel: '', layout: '3LDK', size: 92.4, pref: '千葉県', city: '柏市', station: '柏の葉キャンパス駅', walk: 18, year: 2024, floor: '平屋', tags: ['新築', '庭付き'], check: '新築・ウッドデッキ', art: 'trees', photos: 10 },
+].map((l) => ({ mgmtLabel: l.mode === 'rent' ? `管理費 ${Number(l.mgmt).toLocaleString('en-US')}円` : '', ...l, name: l.name.trim() }));

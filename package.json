@@ -1,0 +1,16 @@
+{
+  "name": "jev-suumoja-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "スーモジャ x Jev Ultrafast side-panel demo replica (scripted simulation) + bookmarklet",
+  "scripts": {
+    "serve": "node tests/serve.mjs",
+    "icons": "node tools/make-icons.mjs",
+    "build": "node tools/build-bookmarklet.mjs",
+    "test:unit": "node --test tests/unit.test.mjs",
+    "test:e2e": "node tests/e2e.mjs",
+    "test": "npm run test:unit && npm run test:e2e"
+  },
+  "devDependencies": { "playwright-core": "^1.56.1" }
+}

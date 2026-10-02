@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>スーモジャ × Jev Ultrafast デモ</title>
+<meta name="theme-color" content="#1f4d2b">
+<meta name="description" content="架空の不動産サイト「スーモジャ」とAIエージェントパネル Jev Ultrafast のデモ（すべて架空・クライアント内で動作）">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/panel.css">
+</head>
+<body>
+<div class="app">
+<div class="site-col">
+  <div class="banner b1"><span class="ic">⚠</span> これはAIエージェント検証用のデモサイトです</div>
+  <div class="banner b2">これはAIエージェント検証用のジョークサイトです　掲載物件はすべて架空です。SUUMO・株式会社リクルート・不動産会社とは一切関係ありません。</div>
+  <header class="hdr">
+    <div class="logo"><b>スーモジャ</b><small>住まいを、直感しよう。</small></div>
+    <nav class="tabs" aria-label="カテゴリ"><a class="on" href="#" data-jev-nav>借りる</a><a href="#" data-jev-nav>買う</a><a href="#" data-jev-nav>建てる</a><a href="#" data-jev-nav>暮らす</a></nav>
+    <button type="button" class="favpill" id="fav-pill" aria-label="お気に入り">♡ お気に入り <span class="badge" id="fav-count">0</span></button>
+  </header>
+  <section class="hero">
+    <div class="hero-in">
+      <span class="chip-w">✦ 架空の住まい探し</span>
+      <h1>まだ知らない街に、<br>ちょうどいい部屋を。</h1>
+      <p>首都圏の架空物件を24件掲載。ログインなしですべての機能を試せます。</p>
+    </div>
+    <svg class="deco" viewBox="0 0 260 150" aria-hidden="true"><circle cx="215" cy="38" r="17" fill="#e0a030"/><path d="M60 140V86l45-38 45 38v54z" fill="none" stroke="#2f7d32" stroke-width="9" stroke-linejoin="round"/><g fill="#2f7d32"><circle cx="190" cy="120" r="15"/><circle cx="212" cy="108" r="15"/><circle cx="214" cy="134" r="15"/><circle cx="192" cy="141" r="12"/></g></svg>
+  </section>
+  <form class="search" id="search-form" role="search" onsubmit="return false">
+    <label class="kw"><span class="sr">キーワード</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="kw" type="search" placeholder="駅名・市区町村・物件名で検索" autocomplete="off"></label>
+    <div class="row4">
+      <label>エリア<select id="f-area"><option>すべて</option><option>東京都</option><option>神奈川県</option><option>埼玉県</option><option>千葉県</option></select></label>
+      <label>物件種別<select id="f-type"><option>すべて</option><option>マンション</option><option>アパート</option><option>一戸建て</option></select></label>
+      <label>間取り<select id="f-layout"><option>すべて</option><option>1R</option><option>1K</option><option>1DK</option><option>1LDK</option><option>2LDK</option><option>3LDK</option></select></label>
+      <label>賃料上限<select id="f-rent"><option>上限なし</option><option>5万円</option><option>7万円</option><option>10万円</option><option>15万円</option><option>20万円</option></select></label>
+      <button type="button" class="go" id="btn-search">🔍 この条件で検索</button>
+    </div>
+  </form>
+  <div class="crumb"><a href="#" data-jev-nav>サービス一覧</a> / 架空物件を探す</div>
+  <div class="rh">
+    <h2>検索結果 <span id="result-count"><b>24</b></span>件</h2>
+    <button type="button" class="reset" id="btn-reset">⇌ 条件をリセット</button>
+    <span class="sp"></span>
+    <label class="sort"><span class="sr">並び順</span><select id="f-sort"><option>おすすめ順</option><option>賃料の安い順</option><option>築年の新しい順</option></select></label>
+    <div class="seg"><button type="button" class="on" id="v-list">☰ 一覧</button><button type="button" id="v-map">▦ 地図</button></div>
+  </div>
+  <div id="results" class="grid" aria-live="polite"></div>
+  <p id="empty" class="empty" hidden>条件に合う物件がありません。</p>
+  <footer class="ft">© スーモジャ（架空） — このサイトの内容はすべてフィクションです。</footer>
+</div>
+<div id="panel-host" class="panel-col"></div>
+</div>
+
+<div class="backdrop" id="detail-modal" role="dialog" aria-modal="true" aria-labelledby="d-title" hidden>
+  <div class="modal detail"><button type="button" class="x" data-close aria-label="閉じる">✕</button>
+    <div class="d-photos"><img id="d-photo" alt="" class="big"><div class="thumbs"><img id="d-th1" alt=""><img id="d-th2" alt=""></div></div>
+    <div class="d-info">
+      <div class="chips"><span class="tag">賃貸</span><span class="tag">架空物件</span></div>
+      <h3 id="d-title"></h3><p class="loc" id="d-loc"></p>
+      <div class="pricebox"><b id="d-price"></b><small id="d-mgmt"></small></div>
+      <dl class="spec2" id="d-spec"></dl>
+      <p class="note">★ この物件情報は完全なフィクションです。実際の内見・契約はできません。</p>
+      <div class="btns"><button type="button" class="outline" id="detail-fav">♡ お気に入り</button><button type="button" class="primary" id="btn-inquire">空室状況を問い合わせる</button></div>
+    </div>
+  </div>
+</div>
+<div class="backdrop top" id="inquiry-modal" role="dialog" aria-modal="true" aria-labelledby="i-title" hidden>
+  <div class="modal inq"><button type="button" class="x" data-close aria-label="閉じる">✕</button>
+    <span class="warn">入力内容は保存・送信されません</span>
+    <h3 id="i-title">架空の空室問い合わせ</h3><p class="sub" id="i-sub"></p>
+    <label>お名前<input id="inq-name" type="text" placeholder="山田 たろう" value="山田 たろう" autocomplete="off"></label>
+    <label>メールアドレス<input id="inq-email" type="email" placeholder="demo@example.com" autocomplete="off"></label>
+    <label>お問い合わせ内容<textarea id="inq-body" rows="3">空室状況と内見可能な日時を教えてください。</textarea></label>
+    <button type="button" class="primary full" id="btn-submit-demo">内容を送信する（デモ）</button>
+  </div>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

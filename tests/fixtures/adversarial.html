@@ -1,0 +1,17 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fixture: adversarial</title>
+<style>body{font:16px system-ui;margin:12px;padding-bottom:170px}button,input,a{min-height:44px;font-size:16px;margin:4px;display:inline-block}</style></head><body>
+<h1>Adversarial</h1>
+<form id="contact" action="/thanks" onsubmit="event.preventDefault();window.__submitted=(window.__submitted||0)+1;return false">
+  <label>キーワード検索 <input type="search" name="q"></label><input type="email" aria-label="mail"><textarea aria-label="msg"></textarea><button type="submit">Go</button>
+</form>
+<form id="plain" onsubmit="event.preventDefault();window.__plain=(window.__plain||0)+1;return false"><button type="submit" id="send-message">→</button></form>
+<div>
+<button type="button" onclick="window.__clicked=(window.__clicked||[]).concat('payment')">Payment</button>
+<button type="button" onclick="window.__clicked=(window.__clicked||[]).concat('send')">Send message</button>
+<button type="button" onclick="window.__clicked=(window.__clicked||[]).concat('zw')">購&#8203;入</button>
+<button type="button" onclick="window.__clicked=(window.__clicked||[]).concat('nested')"><span>Buy</span></button>
+<button type="button" id="btn-checkout" onclick="window.__clicked=(window.__clicked||[]).concat('id')">→</button>
+<button type="button" onclick="window.__clicked=(window.__clicked||[]).concat('shiryo')">資料請求</button>
+<a href="/checkout/start" onclick="event.preventDefault();window.__clicked=(window.__clicked||[]).concat('href')">Continue</a>
+<a href="mailto:a@example.com" onclick="event.preventDefault();window.__clicked=(window.__clicked||[]).concat('mailto')">Next</a>
+</div></body></html>
