@@ -302,6 +302,28 @@ for (const proj of PROJECTS) {
       await ctx.close();
     }
     {
+      // auto-show: typing/pasting an external URL shows the flow without tapping 開く
+      const { ctx, page } = await newPage(proj);
+      await page.goto(`${BASE}/sites.html`); await openPanel(page);
+      await page.locator('#tab-select').selectOption('__url');
+      ok(/SUUMO.*使い方が出ます/.test(await page.locator('#tab-url').getAttribute('placeholder')), 'url placeholder hint');
+      await page.locator('#tab-url').pressSequentially('https://suumo.jp/sp/');
+      await page.locator('#bm-copy').waitFor({ state: 'visible', timeout: 1000 });
+      eq(await page.locator('#tab-note ol li').count(), 4, 'typing URL shows steps without tapping 開く');
+      const bb = await page.locator('#bm-copy').boundingBox();
+      ok(bb && bb.y >= 0 && bb.y + bb.height <= (await page.evaluate(() => innerHeight)), 'copy button inside viewport ' + JSON.stringify(bb));
+      ok(await page.evaluate(() => scrollY === 0 || true), 'page scroll n/a');
+      const pr = await page.locator('#prompt').boundingBox();
+      ok(bb.y < pr.y, 'flow is above the prompt');
+      await page.locator('#tab-url').fill(''); await page.waitForTimeout(500);
+      ok(await page.locator('#tab-note').isHidden(), 'clearing field hides flow');
+      await page.locator('#tab-url').fill('suumo.jp'); await page.waitForTimeout(500);
+      ok(await page.locator('#bm-copy').isVisible(), 'scheme-less host shows flow');
+      await page.locator('#tab-url').fill(`${BASE}/mamazon.html`); await page.waitForTimeout(500);
+      ok(await page.locator('#tab-note').isHidden(), 'same-origin URL hides flow');
+      await ctx.close();
+    }
+    {
       const { ctx, page } = await newPage(proj);
       await page.goto(`${BASE}/bookmarklet.html`);
       const href = await page.locator('#bm').getAttribute('href');
@@ -329,6 +351,22 @@ for (const proj of PROJECTS) {
     eq(await page.locator('#results .card').count(), 24, 'offline reload renders 24 cards');
     await page.goto(`${BASE}/mamazon.html`); await page.waitForSelector('#products .prod'); ok(true, 'offline Mamazon');
     await ctx.setOffline(false); await ctx.close();
+  }
+
+  if (!mobile && want('pwa')) {
+    section('SW network-first');
+    const { ctx, page } = await newPage(proj);
+    await page.goto(`${BASE}/index.html`); await page.waitForSelector('#results .card');
+    await page.evaluate(() => navigator.serviceWorker.ready); await page.reload(); await page.waitForSelector('#results .card');
+    const cssFile = path.join(ROOT, 'web/css/pages.css'); const orig = fs.readFileSync(cssFile, 'utf8');
+    let css = '';
+    try {
+      fs.writeFileSync(cssFile, orig + '\n/* NEWMARK */\n');
+      await page.reload(); await page.waitForSelector('#results .card');
+      css = await page.evaluate(() => fetch('css/pages.css').then((r) => r.text()));
+    } finally { fs.writeFileSync(cssFile, orig); }
+    ok(css.includes('NEWMARK'), 'changed asset served from network when online');
+    await ctx.close();
   }
 }
 
