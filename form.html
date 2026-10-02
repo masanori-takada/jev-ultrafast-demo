@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Personal Form（架空プロフィールフォーム）</title>
+<meta name="theme-color" content="#1f4d2b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/pages.css">
+<link rel="stylesheet" href="css/panel.css">
+</head>
+<body>
+<div class="app">
+<div class="site-col">
+  <div class="demo-banner">これはAIエージェント検証用のデモサイトです</div>
+  <div class="demo-banner dark">入力内容は保存・送信されません。すべて架空の情報です。</div>
+  <div class="form-wrap">
+    <form id="profile" class="card" onsubmit="return false" autocomplete="off">
+      <h1>Personal Form</h1><p class="sub">架空プロフィールの入力デモ（送信ボタンは何も送信しません）</p>
+      <div class="field"><label for="f-name">氏名 <span class="req">*</span></label><input id="f-name" type="text" placeholder="山田 太郎"></div>
+      <div class="field"><label for="f-kana">フリガナ <span class="req">*</span></label><input id="f-kana" type="text" placeholder="ヤマダ タロウ"></div>
+      <div class="field"><label for="f-mail">メールアドレス <span class="req">*</span></label><input id="f-mail" type="email" placeholder="taro@example.com"></div>
+      <div class="field"><label for="f-tel">電話番号 <span class="req">*</span></label><input id="f-tel" type="tel" placeholder="09012345678"></div>
+      <div class="field"><label for="f-birth">生年月日 <span class="req">*</span></label><input id="f-birth" type="text" placeholder="1990-01-15"></div>
+      <div class="field"><label for="f-pref">都道府県 <span class="req">*</span></label><select id="f-pref"><option value="">選択してください</option><option>北海道</option><option>東京都</option><option>神奈川県</option><option>大阪府</option><option>福岡県</option></select></div>
+      <div class="field"><label for="f-addr">住所</label><input id="f-addr" type="text" placeholder="千代田区架空1-2-3"></div>
+      <div class="field"><label for="f-job">職業</label><select id="f-job"><option value="">選択してください</option><option>会社員</option><option>自営業</option><option>学生</option><option>その他</option></select></div>
+      <fieldset class="field"><legend>希望する連絡方法</legend><div class="opts"><label><input type="radio" name="contact" value="mail"> メール</label><label><input type="radio" name="contact" value="tel"> 電話</label></div></fieldset>
+      <fieldset class="field"><legend>興味のあるテーマ</legend><div class="opts"><label><input type="checkbox" name="theme"> 生成AI</label><label><input type="checkbox" name="theme"> 不動産</label><label><input type="checkbox" name="theme"> ガジェット</label></div></fieldset>
+      <div class="field"><label for="f-note">備考</label><textarea id="f-note"></textarea></div>
+      <div class="field opts"><label><input type="checkbox" id="f-confirm"> 入力内容を確認しました</label></div>
+      <div class="actions"><button type="button" class="btn2" id="btn-copy">架空の個人情報をコピーする</button><button type="button" class="btn2 primary" id="btn-send">送信（デモ）</button></div>
+      <p id="sent" class="sub" hidden></p>
+    </form>
+  </div>
+</div>
+<div id="panel-host" class="panel-col"></div>
+</div>
+<script type="module">
+import { startApp, PRESET_PROMPTS } from './js/app.js';
+import { genericAdapter } from './js/adapters/index.js';
+import { registerSW } from './js/sw-register.js';
+// Both buttons are inert on purpose (nothing is copied or sent).
+document.getElementById('btn-send').addEventListener('click', (e) => e.preventDefault());
+document.getElementById('btn-copy').addEventListener('click', (e) => e.preventDefault());
+const app = startApp({ host: document.getElementById('panel-host'), mode: 'demo', adapter: genericAdapter });
+if (!/preset=/.test(location.hash)) app.panel.setPrompt(PRESET_PROMPTS.form);
+registerSW();
+</script>
+</body>
+</html>

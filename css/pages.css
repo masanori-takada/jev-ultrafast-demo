@@ -1,0 +1,62 @@
+/* Shared by the extra demo pages (Mamazon, Personal Form, hub). Everything is fictional. */
+:root { --bg: #f3f4f6; --text: #1b1f27; --accent: #ff9900; --line: #d9dce1; --link: #0a58ca; --collapsed: 168px; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 "Hiragino Sans","Noto Sans JP",system-ui,-apple-system,"Segoe UI",sans-serif; }
+.app { display: flex; height: 100vh; height: 100dvh; background: #eef0f2; }
+.site-col { flex: 1; min-width: 0; overflow-y: auto; background: var(--bg); }
+.panel-col { position: relative; z-index: 2147483100; width: clamp(320px, 22vw, 400px); margin: 6px 6px 6px 0; border-radius: 8px; overflow: hidden; flex: none; display: flex; min-height: 0; }
+.panel-col #panel { flex: 1; }
+.demo-banner { background: #ffe600; text-align: center; font-weight: 700; font-size: 12px; padding: 6px 12px; }
+.demo-banner.dark { background: #1f4d2b; color: #fff; font-weight: 400; }
+.top { background: #232f3e; color: #fff; display: flex; align-items: center; gap: 12px; padding: 10px 16px; flex-wrap: wrap; }
+.top .brand { font-weight: 800; font-size: 20px; letter-spacing: .5px; color: #fff; text-decoration: none; }
+.top .brand i { color: var(--accent); font-style: normal; }
+.top form { display: flex; flex: 1; min-width: 220px; }
+.top input[type=search] { flex: 1; min-width: 0; height: 44px; border: 0; border-radius: 6px 0 0 6px; padding: 0 12px; font: inherit; }
+.top .go { height: 44px; min-width: 56px; border: 0; background: var(--accent); border-radius: 0 6px 6px 0; font-weight: 700; cursor: pointer; }
+.wrap { display: grid; grid-template-columns: 220px 1fr; gap: 18px; padding: 16px; }
+aside.facets { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; align-self: start; }
+.facets section { margin-bottom: 14px; }
+.facets h3 { font-size: 13px; margin: 0 0 6px; }
+.facets label, .facets a { display: flex; align-items: center; gap: 8px; min-height: 36px; font-size: 13px; color: var(--text); text-decoration: none; cursor: pointer; }
+.facets a.on, .facets a[aria-current=true] { font-weight: 800; color: var(--link); }
+.facets input[type=checkbox] { width: 20px; height: 20px; }
+.list-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.list-head .sp { flex: 1; }
+.list-head select, .list-head label { font-size: 13px; }
+.list-head select { height: 44px; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; background: #fff; }
+.products { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.prod { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+.prod img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 6px; }
+.prod h4 { margin: 4px 0 0; font-size: 13px; }
+.prod .stars { color: #e47911; font-size: 12px; }
+.prod .price { font-size: 18px; font-weight: 800; }
+.prod .row { display: flex; gap: 6px; margin-top: auto; flex-wrap: wrap; }
+.prod button { flex: 1; min-height: 44px; border-radius: 999px; border: 1px solid #c9a227; background: #ffd814; font-weight: 700; cursor: pointer; font-size: 12px; }
+.prod button.buy { background: #ffa41c; border-color: #e08b00; }
+.chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.empty { padding: 30px; text-align: center; color: #666; }
+/* form page */
+.form-wrap { max-width: 720px; margin: 16px auto; padding: 0 16px 40px; }
+.card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 14px; }
+.card h1 { font-size: 20px; margin: 0 0 4px; } .card .sub { margin: 0; color: #666; font-size: 12px; }
+.field { margin-top: 12px; } .field > label, .field > legend, legend { display: block; font-weight: 700; font-size: 13px; margin-bottom: 4px; padding: 0; }
+.field input[type=text], .field input[type=email], .field input[type=tel], .field select, .field textarea { width: 100%; min-height: 44px; border: 1px solid #ccc; border-radius: 6px; padding: 8px 10px; font: inherit; background: #fff; color: #222; }
+.field textarea { min-height: 80px; } fieldset.field { border: 0; padding: 0; margin: 12px 0 0; }
+.opts { display: flex; gap: 14px; flex-wrap: wrap; } .opts label { display: flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 400; }
+.opts input { width: 20px; height: 20px; }
+.req { color: #c2185b; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.btn2 { min-height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid #bbb; background: #fff; font-weight: 700; cursor: pointer; }
+.btn2.primary { background: #2f6bff; border-color: #2f6bff; color: #fff; }
+.hub { max-width: 760px; margin: 20px auto; padding: 0 16px; }
+.hub a.tile { display: block; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; color: inherit; text-decoration: none; min-height: 44px; }
+.hub a.tile b { display: block; font-size: 16px; } .hub a.tile span { color: #666; font-size: 12px; }
+@media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
+  .app { display: block; height: auto; } .site-col { overflow: visible; } .panel-col { display: contents; }
+  .wrap { grid-template-columns: 1fr; padding: 12px; }
+  .products { grid-template-columns: 1fr 1fr; }
+  .top form { min-width: 0; flex-basis: 100%; }
+  .top input[type=search] { font-size: 16px; }
+  .field input, .field select, .field textarea { font-size: 16px; }
+}

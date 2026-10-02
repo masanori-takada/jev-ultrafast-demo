@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mamazon（架空の通販サイト）</title>
+<meta name="theme-color" content="#232f3e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/pages.css">
+<link rel="stylesheet" href="css/panel.css">
+</head>
+<body>
+<div class="app">
+<div class="site-col">
+  <div class="demo-banner">これはAIエージェント検証用のデモサイトです</div>
+  <div class="demo-banner dark">Mamazon は架空の通販サイトです。実在のサービス・企業とは一切関係ありません。購入・決済はできません。</div>
+  <div class="top"><a class="brand" href="sites.html">Mama<i>zon</i></a>
+    <form id="shop-form" role="search" onsubmit="return false"><label class="sr" for="q" style="position:absolute;left:-9999px">商品名で検索</label><input id="q" type="search" placeholder="商品名で検索" autocomplete="off"><button type="button" class="go" id="shop-go">検索</button></form>
+  </div>
+  <div class="wrap">
+    <aside class="facets" aria-label="絞り込み">
+      <section><h3>価格</h3><div id="f-price">
+        <label><input type="checkbox" name="price" value="50000"> ¥50,000以下</label>
+        <label><input type="checkbox" name="price" value="100000"> ¥100,000以下</label>
+        <label><input type="checkbox" name="price" value="150000"> ¥150,000以下</label>
+        <label><input type="checkbox" name="price" value="200000"> ¥200,000以下</label></div></section>
+      <section><h3>カスタマーレビュー</h3><div id="f-rating"><a href="#" data-min="4" role="button">★4以上</a><a href="#" data-min="3" role="button">★3以上</a></div></section>
+      <section><h3>ブランド</h3><div id="f-brand"></div></section>
+    </aside>
+    <main>
+      <div class="list-head"><b id="count">16件</b><span class="sp"></span>
+        <label for="sort">並び替え</label>
+        <select id="sort"><option value="rec">おすすめ順</option><option value="asc">価格の安い順</option><option value="desc">価格の高い順</option><option value="rev">レビュー評価順</option><option value="new">新着順</option></select></div>
+      <div class="products" id="products"></div><p class="empty" id="empty" hidden>条件に合う商品がありません。</p>
+    </main>
+  </div>
+</div>
+<div id="panel-host" class="panel-col"></div>
+</div>
+<script type="module" src="js/mamazon.js"></script>
+</body>
+</html>
