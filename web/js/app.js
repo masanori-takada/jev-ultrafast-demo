@@ -13,7 +13,7 @@ const wordsOf = (...xs) => xs.flatMap((x) => String(x || '').split(/[\s.\-_/:|â€
 /** @param {{host:Element, mode:'demo'|'bookmarklet', adapter?:object, ctx?:object, css?:string, onClose?:Function, promptFor?:Function}} o */
 export function startApp(o) {
   const adapter = o.adapter || pickAdapter(location.hostname, globalThis.JEV_ADAPTER);
-  const panel = mountPanel(o.host, { mode: o.mode, css: o.css, onClose: o.onClose });
+  const panel = mountPanel(o.host, { mode: o.mode, css: o.css, onClose: o.onClose, dock: o.dock });
   const hash = (location.hash.match(/preset=(\w+)/) || [])[1];
   const initial = (hash && PRESET_PROMPTS[hash]) || (hash === 'suumoja' && adapter.defaultPrompt) || adapter.defaultPrompt;
   panel.setPrompt(initial);

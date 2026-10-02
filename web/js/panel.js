@@ -13,6 +13,24 @@ export const DEMO_SITES = [
   { title: 'スーモジャ（架空の不動産サイト）', page: 'index.html' },
   { title: 'Personal Form（架空プロフィールフォーム）', page: 'form.html' },
 ];
+const BM_URL = 'bookmarklet.js';
+/** Percent-encodes ONLY what a javascript: URL needs (%, #, CR/LF) so it stays valid in a phone bookmark URL field. */
+export function encodeBookmarklet(code) {
+  return 'javascript:' + String(code).replace(/%/g, '%25').replace(/#/g, '%23').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+}
+let bmCache = null;
+/** Fetches bookmarklet.js ONCE here in the app page (same origin: no CSP/CORS issue) and returns the FULL self-contained javascript: text. */
+export async function bookmarkletCode(base) {
+  if (bmCache) return bmCache;
+  const r = await fetch(new URL(BM_URL, base).href);
+  if (!r.ok) throw new Error(`bookmarklet.js ${r.status}`);
+  return (bmCache = encodeBookmarklet(await r.text()));
+}
+/** Constructed stylesheets are exempt from the host page's style-src CSP (an injected <style> is not); <style> stays as fallback. */
+function applyCss(root, css) {
+  try { const sh = new CSSStyleSheet(); sh.replaceSync(css); root.adoptedStyleSheets = [sh]; return; } catch { /* old browser */ }
+  const st = document.createElement('style'); st.textContent = css; root.appendChild(st);
+}
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // Bookmarklet mode runs on a third-party host page: the key lives ONLY in this module variable (gone on reload) and never touches host storage.
 let memKey = '';
@@ -64,7 +82,7 @@ const HTML = (o) => `
 export function mountPanel(host, opts = {}) {
   const o = { mode: 'demo', adapters: null, ...opts };
   let root = host;
-  if (o.mode === 'bookmarklet') { root = host.attachShadow({ mode: 'open' }); const st = document.createElement('style'); st.textContent = o.css || ''; root.appendChild(st); }
+  if (o.mode === 'bookmarklet') { root = host.attachShadow({ mode: 'open' }); applyCss(root, o.css || ''); }
   const wrap = document.createElement('div'); wrap.innerHTML = HTML(o); root.appendChild(wrap.firstElementChild);
   const $ = (s) => root.querySelector(s);
   const panel = $('#panel');
@@ -84,16 +102,34 @@ export function mountPanel(host, opts = {}) {
     sel.innerHTML = DEMO_SITES.map((s) => `<option value="${s.page}">${esc(s.title)} — ${esc(loc.origin)}/${esc(s.page)}</option>`).join('') + '<option value="__url">その他のURLを入力…</option>';
     sel.value = DEMO_SITES.some((s) => s.page === cur) ? cur : 'sites.html';
     const urlRow = $('#url-row'), note = $('#tab-note');
+    const showExternalFlow = (u) => {
+      const codeP = bookmarkletCode(loc.href);
+      codeP.catch(() => {});
+      note.hidden = false;
+      note.innerHTML = `<b>${esc(u.hostname)} は、この画面からは操作できません。</b>（ブラウザの制限）<br>下の手順で、そのサイトの上に Jev を出します。
+        <button type="button" class="btn big" id="bm-copy">ブックマークレットをコピー</button>
+        <div class="bm-ok" id="bm-ok" role="status" aria-live="polite"></div>
+        <textarea id="bm-text" class="bm-text" readonly hidden aria-label="ブックマークレットのコード"></textarea>
+        <div class="bm-steps"><b>iPhone（Safari）・Android（Chrome）</b>
+          <ol><li>このページをブックマークに追加（共有 → ブックマークを追加）</li><li>名前を「Jev」にして保存</li><li>保存したブックマークを編集し、URLの欄にコピーした文字を貼り付けて保存</li><li>「サイトを開く」でサイトを開き、そのブックマーク「Jev」をタップ</li></ol></div>
+        <a class="btn big" id="bm-open" href="${esc(u.href)}" target="_blank" rel="noopener">サイトを開く</a>
+        <div class="bm-pc">PC は拡張機能が便利です（ボタン1回でパネルが出ます）。</div>
+        <a class="bm-more" href="bookmarklet.html">くわしい手順ページ</a>`;
+      const ok = note.querySelector('#bm-ok'), ta = note.querySelector('#bm-text');
+      note.querySelector('#bm-copy').addEventListener('click', async () => {
+        let code;
+        try { code = await codeP; } catch { ok.textContent = 'コードを読み込めませんでした。通信を確認してもう一度押してください。'; return; }
+        const kb = `（約 ${Math.round(code.length / 1024)} KB）`;
+        try { await navigator.clipboard.writeText(code); ok.textContent = `コピーしました。${kb}`; ta.hidden = true; }
+        catch { ta.value = code; ta.hidden = false; ta.focus(); ta.select(); ok.textContent = `コピーできませんでした。下の文字を全部選んでコピーしてください。${kb}`; }
+      });
+    };
     const openExternal = () => {
       const v = $('#tab-url').value.trim(); let u;
       try { u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`); } catch { u = null; }
       if (!u) { note.hidden = false; note.textContent = 'URLの形式が正しくありません。'; return; }
       if (u.origin === loc.origin) { loc.href = u.href; return; }
-      note.hidden = false;
-      note.innerHTML = `この画面（PWA）からは他サイト（${esc(u.hostname)}）を直接操作できません（ブラウザの制限）。外部サイトで使うには、ブックマークレットを追加して、そのサイト上でパネルを開いてください。`;
-      const b = document.createElement('a'); b.className = 'btn'; b.href = 'bookmarklet.html'; b.textContent = 'ブックマークレットの追加ページを開く'; b.style.display = 'flex'; b.style.textDecoration = 'none';
-      note.appendChild(b);
-      window.open(u.href, '_blank', 'noopener');
+      showExternalFlow(u);
     };
     const box = $('#tab-box');
     const showUrl = (on) => { urlRow.hidden = !on; sel.hidden = on; box.dataset.mode = on ? 'url' : 'select'; };
@@ -123,7 +159,7 @@ export function mountPanel(host, opts = {}) {
   el.stop.addEventListener('click', () => { if (!el.stop.disabled) handlers.stop.forEach((f) => f()); });
   api.onPreset = (f) => handlers.tab.push(f);
   $('#btn-x').addEventListener('click', () => { if (o.onClose) o.onClose(); });
-  $('#sheet-close').addEventListener('click', () => { if (o.mode === 'bookmarklet' && panel.dataset.snap === 'collapsed') { o.onClose?.(); } else setSnap('collapsed'); });
+  $('#sheet-close').addEventListener('click', () => { if (o.mode === 'bookmarklet' && (panel.dataset.snap === 'collapsed' || panel.dataset.dock)) { o.onClose?.(); } else setSnap('collapsed'); });
 
   // ---- log ----
   const valHtml = (label) => esc(label).replace(/&quot;(.*?)&quot;/g, '<span class="val">「$1」</span>');
@@ -149,14 +185,18 @@ export function mountPanel(host, opts = {}) {
   api.setStatusText = (t) => { el.status.textContent = t; };
 
   // ---- layout: side column on desktop, bottom sheet on phones / bookmarklet ----
-  function setSnap(s) { panel.dataset.snap = s; panel.style.height = ''; syncPad(); }
+  function setSnap(s) { if (panel.dataset.dock && s === 'collapsed') s = 'full'; panel.dataset.snap = s; panel.style.height = ''; syncPad(); }
   const collapsedH = () => 168;
   function syncPad() {
     if (o.mode !== 'demo') return;
     document.body.style.paddingBottom = panel.dataset.layout === 'sheet' ? `calc(${collapsedH()}px + env(safe-area-inset-bottom, 0px))` : '';
   }
   function setLayout(l) { panel.dataset.layout = l; panel.dataset.snap = 'collapsed'; panel.style.height = ''; syncPad(); }
-  if (o.mode === 'bookmarklet') setLayout('sheet');
+  // extension: docked right column on desktop widths (never collapses); phones fall back to the bottom sheet
+  const dockMq = o.dock && matchMedia('(min-width: 769px) and (min-height: 501px)');
+  const dockOn = () => !!(dockMq && dockMq.matches);
+  const applyDock = () => { if (dockOn()) { panel.dataset.dock = 'right'; panel.dataset.snap = 'full'; } else delete panel.dataset.dock; };
+  if (o.mode === 'bookmarklet') { setLayout('sheet'); applyDock(); dockMq?.addEventListener?.('change', () => { setLayout('sheet'); applyDock(); }); }
   else { const mq = matchMedia('(max-width: 768px), (max-height: 500px) and (orientation: landscape)'); setLayout(mq.matches ? 'sheet' : 'side'); mq.addEventListener?.('change', () => setLayout(mq.matches ? 'sheet' : 'side')); }
   api.setSnap = setSnap;
 

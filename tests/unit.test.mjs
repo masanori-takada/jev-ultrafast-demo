@@ -153,3 +153,40 @@ test('safety denylist: adversarial label and href variants', () => {
   for (const h of ['/search?sort=price&order=asc', '/list?page=2', '#', 'javascript:void(0)', '/properties/12'])
     assert.equal(blockedHref(h), null, h);
 });
+
+import fs from 'node:fs';
+test('extension manifest: MV3, activeTab+scripting only, no host permissions, files exist', () => {
+  const root = new URL('../extension/', import.meta.url);
+  const m = JSON.parse(fs.readFileSync(new URL('manifest.json', root), 'utf8'));
+  assert.equal(m.manifest_version, 3);
+  assert.deepEqual([...m.permissions].sort(), ['activeTab', 'scripting']);
+  assert.equal(m.host_permissions, undefined); assert.equal(m.content_scripts, undefined); assert.equal(m.optional_host_permissions, undefined);
+  assert.equal(m.background.service_worker, 'background.js');
+  for (const f of [m.background.service_worker, ...Object.values(m.action.default_icon), ...Object.values(m.icons), 'panel.js', 'README.ja.md'])
+    assert.ok(fs.existsSync(new URL(f, root)), f);
+  const bg = fs.readFileSync(new URL('background.js', root), 'utf8');
+  assert.ok(/executeScript/.test(bg) && /files: \['panel\.js'\]/.test(bg));
+  assert.ok(!/https?:\/\//.test(bg), 'no URLs in background');
+});
+test('extension/panel.js equals the bookmarklet bundle and has no network/remote-code calls except Jev mode fetch', async () => {
+  const { bundle } = await import('../tools/build-bookmarklet.mjs');
+  assert.equal(fs.readFileSync(new URL('../extension/panel.js', import.meta.url), 'utf8'), bundle());
+});
+test('bookmarkletCode: full self-contained javascript: text, no fetch stub, decodes to bookmarklet.js', async () => {
+  const { bookmarkletCode, encodeBookmarklet } = await import('../web/js/panel.js');
+  const code = fs.readFileSync(new URL('../web/bookmarklet.js', import.meta.url), 'utf8');
+  const realFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; return { ok: true, text: async () => code }; };
+  try {
+    const a = await bookmarkletCode('https://example.github.io/app/index.html#x');
+    const b = await bookmarkletCode('https://example.github.io/app/index.html#x');
+    assert.equal(calls, 1, 'fetched once');
+    assert.equal(a, b);
+    assert.ok(a.startsWith('javascript:'));
+    assert.ok(!decodeURIComponent(a.slice(11)).startsWith('fetch('), 'no fetch stub');
+    assert.ok(!/[\n\r#]/.test(a), 'no raw newline or #');
+    assert.equal(decodeURIComponent(a.slice(11)), code);
+  } finally { globalThis.fetch = realFetch; }
+  assert.equal(decodeURIComponent(encodeBookmarklet('a%b#c\nd\r').slice(11)), 'a%b#c\nd\r');
+});

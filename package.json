@@ -8,9 +8,12 @@
     "serve": "node tests/serve.mjs",
     "icons": "node tools/make-icons.mjs",
     "build": "node tools/build-bookmarklet.mjs",
+    "build:extension": "node tools/build-extension.mjs",
     "test:unit": "node --test tests/unit.test.mjs",
     "test:e2e": "node tests/e2e.mjs",
-    "test": "npm run test:unit && npm run test:e2e"
+    "test:ext": "node tests/ext.mjs",
+    "test:csp": "node tests/csp.mjs",
+    "test": "npm run test:unit && npm run test:e2e && npm run test:ext && npm run test:csp"
   },
   "devDependencies": { "playwright-core": "^1.56.1" }
 }

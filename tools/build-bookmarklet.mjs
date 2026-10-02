@@ -36,10 +36,11 @@ export function bundle() {
   return code.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('//')).join('\n');
 }
 
+function main() {
 const code = bundle();
 fs.writeFileSync(path.join(WEB, 'bookmarklet.js'), code);
 // minimal percent-encoding keeps the link short (raw UTF-8 is fine in href); newlines must survive as %0A
-const href = 'javascript:' + code.replace(/%/g, '%25').replace(/\n/g, '%0A').replace(/#/g, '%23');
+const href = 'javascript:' + code.replace(/%/g, '%25').replace(/#/g, '%23').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
 const html = `<!doctype html>
@@ -78,6 +79,7 @@ a { color:var(--blue); }
 <h2>1. このリンクをブックマークに登録</h2>
 <p><a class="btn primary" id="bm" href="${esc(href)}" draggable="true">Jev パネル</a></p>
 <p class="row"><button class="btn" id="copy" type="button">コピー</button><span class="ok" id="copied" role="status" aria-live="polite"></span></p>
+<textarea id="bm-text" readonly hidden aria-label="ブックマークレットのコード" style="width:100%;height:96px;font-size:16px"></textarea>
 <p style="color:var(--muted);font-size:13px">「コピー」はブックマークレットのコードをクリップボードにコピーします（約 ${Math.round(href.length / 1024)} KB）。</p>
 </div>
 
@@ -116,10 +118,11 @@ a { color:var(--blue); }
 <script>
 document.getElementById('copy').addEventListener('click', async () => {
   const code = decodeURIComponent(document.getElementById('bm').getAttribute('href'));
+  const kb = '（約 ' + Math.round(code.length / 1024) + ' KB）';
   const done = (t) => { document.getElementById('copied').textContent = t; };
-  try { await navigator.clipboard.writeText(code); done('コピーしました'); }
-  catch { const ta = document.createElement('textarea'); ta.value = code; document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); done('コピーしました'); } catch { done('コピーできませんでした。リンクを長押ししてコピーしてください'); } ta.remove(); }
+  const ta = document.getElementById('bm-text');
+  try { await navigator.clipboard.writeText(code); ta.hidden = true; done('コピーしました。' + kb); }
+  catch { ta.value = code; ta.hidden = false; ta.focus(); ta.select(); done('コピーできませんでした。下の文字を全部選んでコピーしてください。' + kb); }
 });
 document.getElementById('bm').addEventListener('click', (e) => { if (location.protocol !== 'javascript:') { e.preventDefault(); document.getElementById('copied').textContent = 'このページでは実行しません。ブックマークに登録してください'; } });
 </script>
@@ -128,3 +131,6 @@ document.getElementById('bm').addEventListener('click', (e) => { if (location.pr
 `;
 fs.writeFileSync(path.join(WEB, 'bookmarklet.html'), html);
 console.log(`bookmarklet.js ${code.length} bytes; link ${href.length} chars`);
+}
+if (process.argv[1] === fileURLToPath(import.meta.url)) main();
+

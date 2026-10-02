@@ -9,5 +9,5 @@ import { startApp } from './app.js';
   host.style.cssText = 'all:initial;position:fixed;z-index:2147483647;left:0;bottom:0;width:0;height:0';
   document.documentElement.appendChild(host);
   // eslint-disable-next-line no-undef
-  startApp({ host, mode: 'bookmarklet', css: typeof PANEL_CSS === 'string' ? PANEL_CSS : '', onClose: () => host.remove() });
+  startApp({ host, mode: 'bookmarklet', css: typeof PANEL_CSS === 'string' ? PANEL_CSS : '', dock: !!globalThis.__JEV_EXT__, onClose: () => host.remove() });
 })();

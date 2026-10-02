@@ -279,12 +279,26 @@ for (const proj of PROJECTS) {
       await openPanel(page);
       await page.locator('#tab-select').selectOption('__url');
       await page.locator('#tab-url').fill('https://suumo.jp/sp/');
-      const popup = ctx.waitForEvent('page', { timeout: 3000 }).catch(() => null);
+      await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE }).catch(() => {});
       await page.locator('#tab-open').click();
       const note = await page.locator('#tab-note').textContent();
-      ok(/ブックマークレット/.test(note) && /suumo\.jp/.test(note), 'external URL shows Japanese bookmarklet note');
+      ok(/ブックマークレット/.test(note) && /suumo\.jp/.test(note), 'external URL shows Japanese bookmarklet flow');
       ok((await page.locator('#tab-note a[href="bookmarklet.html"]').count()) === 1, 'note links to bookmarklet.html');
-      const pp = await popup; if (pp) await pp.close().catch(() => {});
+      ok(await page.locator('#bm-copy').isVisible() && (await page.locator('#bm-copy').boundingBox()).height >= 44, 'big copy button visible');
+      eq(await page.locator('#tab-note ol li').count(), 4, 'four numbered steps');
+      ok(/iPhone/.test(note) && /Android/.test(note) && /PC は拡張機能が便利/.test(note), 'phone steps + PC extension note');
+      eq(await page.locator('#bm-open').getAttribute('href'), 'https://suumo.jp/sp/', 'サイトを開く href = entered URL');
+      eq([await page.locator('#bm-open').getAttribute('target'), (await page.locator('#bm-open').textContent())], ['_blank', 'サイトを開く'], 'open in new tab');
+      await page.locator('#bm-copy').click(); await page.waitForTimeout(200);
+      const clip = await page.evaluate(() => navigator.clipboard.readText()).catch(() => null);
+      if (clip !== null) { ok(clip.startsWith('javascript:') && !clip.includes('fetch("') && clip.length > 50000, 'clipboard holds javascript: bookmarklet'); ok(!/[A-Za-z0-9]{32,}key/i.test(clip), 'no key in code'); }
+      ok((await page.locator('#bm-ok').textContent()).includes('コピーしました') || !(await page.locator('#bm-text').isHidden()), 'copy feedback or select-text fallback');
+      // clipboard failure -> fallback textarea with selected code
+      await page.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { value: { writeText: () => Promise.reject(new Error('no')) }, configurable: true }); });
+      await page.locator('#bm-copy').click(); await page.waitForTimeout(100);
+      ok(await page.locator('#bm-text').isVisible() && (await page.locator('#bm-text').inputValue()).startsWith('javascript:'), 'fallback textarea shows code');
+      ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no horizontal overflow');
+      await shot(page, `${proj.name}-external-flow.png`);
       await ctx.close();
     }
     {

@@ -16,3 +16,8 @@ npm test                      # node:test + Playwright e2e（/opt/pw-browsers �
 スマホでは「ホーム画面に追加」でPWAとして使えます。実サイトで使うには `web/bookmarklet.html`（iOS Safari / Android Chrome の手順付き）からブックマークレットを登録してください。
 
 詳細は `docs/spec.md`（9章が汎用エンジン/ブックマークレット）と `docs/plan.md`。スクリーンショットは `docs/screens/`。
+
+## 実サイト（suumo など）で使う
+- **PC（Chrome / Edge）**: `extension/` を「パッケージ化されていない拡張機能」として読み込み（手順は `extension/README.ja.md`、`npm run build:extension` で `dist/jev-ultrafast-extension.zip` も作成）。ツールバーのボタンで右側にパネルが出ます。
+- **スマホ**: アプリの「操作するタブ」にURLを入れると、ブックマークレットのコピー手順が出ます。
+- 他サイトのページに画面を出せるのは拡張機能かブックマークレットだけです（Webページ単体では不可）。
