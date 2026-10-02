@@ -1,5 +1,5 @@
 // Same-origin GETs: network-first with cache:'no-cache' (GitHub Pages sends max-age=600) and offline cache fallback. Bump CACHE to invalidate.
-const CACHE = 'build 2026-10-03 v1'; // synced from js/version.js by tools/build-bookmarklet.mjs
+const CACHE = 'build 2026-10-03 v2'; // synced from js/version.js by tools/build-bookmarklet.mjs
 const FILES = [
   './', 'index.html', 'mamazon.html', 'form.html', 'sites.html', 'bookmarklet.html', 'bookmarklet.js', 'manifest.webmanifest',
   'css/site.css', 'css/panel.css', 'css/pages.css',
