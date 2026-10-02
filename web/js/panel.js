@@ -53,8 +53,7 @@ const HTML = (o) => `
         ${o.mode === 'bookmarklet'
           ? `<div class="tabbox ro"><span class="ro-text" id="tab-ro"></span></div>`
           : `<div class="tabbox" id="tab-box"><select id="tab-select" aria-labelledby="tab-lbl"></select>
-               <div class="urlrow" id="url-row" hidden><input id="tab-url" type="url" inputmode="url" placeholder="SUUMO などのURLを貼ると、使い方が出ます" aria-label="操作するサイトのURL"><button type="button" class="btn small" id="tab-open">開く</button></div></div>
-             <div class="note" id="tab-note" hidden></div>`}
+               <div class="urlrow" id="url-row" hidden><input id="tab-url" type="url" inputmode="url" placeholder="サイトのURLを入力" aria-label="操作するサイトのURL"><button type="button" class="btn small" id="tab-open">開く</button></div></div>`}
       </div>
       <div class="sect">
         <label class="lbl" for="prompt">Jev にやって欲しいこと <small>— 下のプリセットを押すとそのページを開いて指示が入ります</small></label>
@@ -103,63 +102,25 @@ export function mountPanel(host, opts = {}) {
     const sel = $('#tab-select'); const cur = (loc.pathname.split('/').pop() || 'index.html');
     sel.innerHTML = DEMO_SITES.map((s) => `<option value="${s.page}">${esc(s.title)} — ${esc(loc.origin)}/${esc(s.page)}</option>`).join('') + '<option value="__url">その他のURLを入力…</option>';
     sel.value = DEMO_SITES.some((s) => s.page === cur) ? cur : 'sites.html';
-    const urlRow = $('#url-row'), note = $('#tab-note');
-    let flowOn = false, scrolled = false;
+    const urlRow = $('#url-row');
     const urlEl = $('#tab-url');
     const parseUrl = (v) => { v = v.trim(); if (!v) return null; try { const u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`); return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u : null; } catch { return null; } };
-    // keeps the 'サイトを開く' target + hint in sync with the typed URL (never blocks the flow itself)
-    const updateOpen = () => {
-      const a = note.querySelector('#bm-open'), hint = note.querySelector('#bm-hint'), title = note.querySelector('#bm-title');
-      if (!a) return;
-      const u = parseUrl(urlEl.value), same = !!u && u.origin === loc.origin;
-      const live = !!u && !same;
-      if (live) { a.setAttribute('href', u.href); a.removeAttribute('aria-disabled'); } else { a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); }
-      hint.textContent = same ? 'このサイトは上の「開く」で移動できます（Jevパネルが出ます）。' : u ? '' : 'URLを入力すると開けます';
-      title.textContent = live ? `${u.hostname} は、ここでは操作できません。下の手順で Jev を出します。` : same ? 'このサイトは、ここで直接開けます。' : '操作したいサイトは、ここでは操作できません。下の手順で Jev を出します。';
-    };
-    const showExternalFlow = () => {
-      if (flowOn) { updateOpen(); return; }
-      flowOn = true;
-      bookmarkletCode(loc.href).catch(() => {}); // warm the cache; failures are retried on tap
-      note.hidden = false;
-      note.innerHTML = `<b id="bm-title"></b>
-        <button type="button" class="btn big" id="bm-copy">ブックマークレットをコピー</button>
-        <div class="bm-ok" id="bm-ok" role="status" aria-live="polite"></div>
-        <textarea id="bm-text" class="bm-text" readonly hidden aria-label="ブックマークレットのコード"></textarea>
-        <div class="bm-steps"><b>iPhone（Safari）・Android（Chrome）</b>
-          <ol><li>このページをブックマークに追加（共有 → ブックマークを追加）</li><li>名前を「Jev」にして保存</li><li>保存したブックマークを編集し、URLの欄にコピーした文字を貼り付けて保存</li><li>「サイトを開く」でサイトを開き、そのブックマーク「Jev」をタップ</li></ol></div>
-        <a class="btn big" id="bm-open" target="_blank" rel="noopener">サイトを開く</a>
-        <div class="bm-hint" id="bm-hint"></div>
-        <div class="bm-pc">PC は拡張機能が便利です（ボタン1回でパネルが出ます）。</div>
-        <a class="bm-more" href="bookmarklet.html">くわしい手順ページ</a>`;
-      const ok = note.querySelector('#bm-ok'), ta = note.querySelector('#bm-text');
-      note.querySelector('#bm-open').addEventListener('click', (e) => { if (e.currentTarget.getAttribute('aria-disabled') === 'true') e.preventDefault(); });
-      note.querySelector('#bm-copy').addEventListener('click', async () => {
-        let code;
-        try { code = await bookmarkletCode(loc.href); } catch { ok.textContent = 'コードを読み込めませんでした。通信を確認してもう一度押してください。'; return; }
-        const kb = `（約 ${Math.round(code.length / 1024)} KB）`;
-        try { await navigator.clipboard.writeText(code); ok.textContent = `コピーしました。${kb}`; ta.hidden = true; }
-        catch { ta.value = code; ta.hidden = false; ta.focus(); ta.select(); ok.textContent = `コピーできませんでした。下の文字を全部選んでコピーしてください。${kb}`; }
-      });
-      updateOpen();
-      if (!scrolled) { scrolled = true; try { note.scrollIntoView({ block: 'nearest' }); } catch {} }
-    };
-    const hideFlow = () => { flowOn = false; note.hidden = true; note.textContent = ''; };
-    const syncFlow = () => { if (flowOn) updateOpen(); };
-    let deb; const later = () => { clearTimeout(deb); deb = setTimeout(syncFlow, 0); };
-    for (const ev of ['input', 'keyup', 'change', 'blur', 'paste']) urlEl.addEventListener(ev, ev === 'paste' ? () => setTimeout(syncFlow, 0) : (ev === 'input' || ev === 'keyup' ? later : syncFlow));
     const openExternal = () => {
       const u = parseUrl(urlEl.value);
-      if (!u) { showExternalFlow(); return; }
+      if (!u) return;
       if (u.origin === loc.origin) { loc.href = u.href; return; }
-      showExternalFlow();
+      let w = null;
+      try { w = window.open(u.href, '_blank', 'noopener'); } catch { /* blocked */ }
+      if (!w) loc.href = u.href;
     };
     const box = $('#tab-box');
     const showUrl = (on) => { urlRow.hidden = !on; sel.hidden = on; box.dataset.mode = on ? 'url' : 'select'; };
-    sel.addEventListener('change', () => { if (sel.value === '__url') { showUrl(true); showExternalFlow(); } else { showUrl(false); hideFlow(); if (sel.value !== cur) loc.href = sel.value; } });
-    $('#tab-url').addEventListener('keydown', (e) => { if (e.key === 'Escape') { showUrl(false); hideFlow(); sel.value = DEMO_SITES.some((s) => s.page === cur) ? cur : 'sites.html'; } });
+    const resetSel = () => { sel.value = DEMO_SITES.some((s) => s.page === cur) ? cur : 'sites.html'; };
+    sel.addEventListener('change', () => { if (sel.value === '__url') showUrl(true); else { showUrl(false); if (sel.value !== cur) loc.href = sel.value; } });
+    urlEl.addEventListener('keydown', (e) => { if (e.key === 'Escape') { showUrl(false); resetSel(); } else if (e.key === 'Enter') { e.preventDefault(); openExternal(); } });
     $('#tab-open').addEventListener('click', openExternal);
-    $('#tab-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); openExternal(); } });
+    // a web page cannot drive another origin: say so instead of silently doing nothing
+    api.externalBlocked = () => { if (urlRow.hidden) return false; const u = parseUrl(urlEl.value); return !!u && u.origin !== loc.origin; };
     // presets open the demo page and fill the prompt
     root.querySelectorAll('.preset').forEach((b) => b.addEventListener('click', () => {
       const p = PRESETS[Number(b.dataset.preset) - 1]; const here = cur === p.page;
@@ -178,7 +139,16 @@ export function mountPanel(host, opts = {}) {
   api.getKey = () => keyEl.value.trim() || null;
 
   // ---- buttons ----
-  el.start.addEventListener('click', () => { if (!el.start.disabled) handlers.start.forEach((f) => f()); });
+  el.start.addEventListener('click', () => {
+    if (el.start.disabled) return;
+    if (api.externalBlocked?.()) {
+      el.status.dataset.state = 'error';
+      el.status.textContent = '⚠ 外部サイトはこの画面からは操作できません。拡張機能かブックマークレットで使えます。';
+      const a = document.createElement('a'); a.href = 'bookmarklet.html'; a.textContent = 'くわしい手順'; a.className = 'status-link';
+      el.status.append(' ', a); return;
+    }
+    handlers.start.forEach((f) => f());
+  });
   el.stop.addEventListener('click', () => { if (!el.stop.disabled) handlers.stop.forEach((f) => f()); });
   api.onPreset = (f) => handlers.tab.push(f);
   $('#btn-x').addEventListener('click', () => { if (o.onClose) o.onClose(); });

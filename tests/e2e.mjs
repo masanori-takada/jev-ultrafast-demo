@@ -284,64 +284,45 @@ for (const proj of PROJECTS) {
       await page.locator('.preset[data-preset="1"]').click(); await page.waitForURL(/mamazon\.html/);
       await page.waitForSelector('#prompt', { state: 'attached' }); await openPanel(page);
       ok((await page.locator('#prompt').inputValue()).includes('Mamazon'), 'preset 1 opens Mamazon and fills prompt');
-      // external URL note
-      await openPanel(page);
-      await page.locator('#tab-select').selectOption('__url');
-      await page.locator('#tab-url').fill('https://suumo.jp/sp/');
-      await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE }).catch(() => {});
-      await page.locator('#tab-open').click();
-      const note = await page.locator('#tab-note').textContent();
-      ok(/ブックマークレット/.test(note) && /suumo\.jp/.test(note), 'external URL shows Japanese bookmarklet flow');
-      ok((await page.locator('#tab-note a[href="bookmarklet.html"]').count()) === 1, 'note links to bookmarklet.html');
-      ok(await page.locator('#bm-copy').isVisible() && (await page.locator('#bm-copy').boundingBox()).height >= 44, 'big copy button visible');
-      eq(await page.locator('#tab-note ol li').count(), 4, 'four numbered steps');
-      ok(/iPhone/.test(note) && /Android/.test(note) && /PC は拡張機能が便利/.test(note), 'phone steps + PC extension note');
-      eq(await page.locator('#bm-open').getAttribute('href'), 'https://suumo.jp/sp/', 'サイトを開く href = entered URL');
-      eq([await page.locator('#bm-open').getAttribute('target'), (await page.locator('#bm-open').textContent())], ['_blank', 'サイトを開く'], 'open in new tab');
-      await page.locator('#bm-copy').click(); await page.waitForTimeout(200);
-      const clip = await page.evaluate(() => navigator.clipboard.readText()).catch(() => null);
-      if (clip !== null) { ok(clip.startsWith('javascript:') && !clip.includes('fetch("') && clip.length > 50000, 'clipboard holds javascript: bookmarklet'); ok(!/[A-Za-z0-9]{32,}key/i.test(clip), 'no key in code'); }
-      ok((await page.locator('#bm-ok').textContent()).includes('コピーしました') || !(await page.locator('#bm-text').isHidden()), 'copy feedback or select-text fallback');
-      // clipboard failure -> fallback textarea with selected code
-      await page.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { value: { writeText: () => Promise.reject(new Error('no')) }, configurable: true }); });
-      await page.locator('#bm-copy').click(); await page.waitForTimeout(100);
-      ok(await page.locator('#bm-text').isVisible() && (await page.locator('#bm-text').inputValue()).startsWith('javascript:'), 'fallback textarea shows code');
-      ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no horizontal overflow');
-      await shot(page, `${proj.name}-external-flow.png`);
       await ctx.close();
     }
-    for (const noAdopted of [false, true]) {
-      // flow shows immediately on selecting __url (no typing); open link follows the typed URL; also with constructed stylesheets removed
+    {
+      // 'その他のURLを入力…' shows ONLY the URL row; prompt follows right below; external URL -> status line only
       const { ctx, page, errors } = await newPage(proj);
-      const tag = noAdopted ? ' [no adoptedStyleSheets]' : '';
-      if (noAdopted) await page.addInitScript(() => { try { delete globalThis.CSSStyleSheet.prototype.replaceSync; } catch {} try { delete globalThis.CSSStyleSheet; } catch {} try { delete Document.prototype.adoptedStyleSheets; delete ShadowRoot.prototype.adoptedStyleSheets; } catch {} });
       await page.goto(`${BASE}/sites.html`); await openPanel(page);
-      if (noAdopted) ok(await page.evaluate(() => !('adoptedStyleSheets' in document) && typeof CSSStyleSheet === 'undefined'), 'adoptedStyleSheets really removed');
-      ok(/\bbuild \d{4}-\d{2}-\d{2} v\d+/.test(await page.locator('#build-id').textContent()) && await page.locator('#build-id').isVisible(), 'build id visible' + tag);
+      ok(/\bbuild \d{4}-\d{2}-\d{2} v\d+/.test(await page.locator('#build-id').textContent()) && await page.locator('#build-id').isVisible(), 'build id visible');
       await page.locator('#tab-select').selectOption('__url');
-      ok(/SUUMO.*使い方が出ます/.test(await page.locator('#tab-url').getAttribute('placeholder')), 'url placeholder hint');
-      await page.locator('#bm-copy').waitFor({ state: 'visible', timeout: 1000 });
-      eq(await page.locator('#tab-note ol li').count(), 4, 'steps shown with NO typing' + tag);
-      const bb = await page.locator('#bm-copy').boundingBox();
-      ok(bb && bb.y >= 0 && bb.y + bb.height <= (await page.evaluate(() => innerHeight)), 'copy button inside viewport w/o typing ' + JSON.stringify(bb));
-      const pr = await page.locator('#prompt').boundingBox();
-      ok(bb.y < pr.y, 'flow is above the prompt');
-      ok(await page.locator('#bm-open').getAttribute('aria-disabled') === 'true' && (await page.locator('#bm-open').getAttribute('href')) === null, 'サイトを開く disabled before URL' + tag);
-      ok((await page.locator('#bm-hint').textContent()).includes('URLを入力すると開けます'), 'hint before URL');
-      ok(await page.evaluate(() => getComputedStyle(document.querySelector('#bm-copy')).backgroundColor !== 'rgba(0, 0, 0, 0)'), 'panel is styled' + tag);
+      eq(await page.locator('#tab-url').getAttribute('placeholder'), 'サイトのURLを入力', 'url placeholder');
+      ok(await page.locator('#url-row').isVisible() && await page.locator('#tab-open').isVisible(), 'URL row + 開く visible');
+      eq(await page.locator('#bm-copy, #tab-note, #bm-open, .bm-steps').count(), 0, 'no external-flow elements exist');
+      const gap = async () => { const r = await page.locator('#url-row').boundingBox(), t = await page.locator('#prompt').boundingBox(); return { r, t, d: t.y - (r.y + r.height) }; };
+      const g0 = await gap();
+      ok(g0.d >= 0 && g0.d <= 100, 'prompt right below URL row, gap ' + g0.d);
+      const lbl = await page.locator('label[for=prompt]').boundingBox();
+      ok(lbl.y >= g0.r.y + g0.r.height && g0.t.y - (lbl.y + lbl.height) <= 24, 'prompt label then textarea directly follow URL row');
       await page.locator('#tab-url').pressSequentially('https://suumo.jp/sp/');
       await page.waitForTimeout(100);
-      eq(await page.locator('#bm-open').getAttribute('href'), 'https://suumo.jp/sp/', 'typing enables サイトを開く' + tag);
-      ok(await page.locator('#bm-open').getAttribute('aria-disabled') === null, 'open enabled');
-      await page.locator('#tab-url').fill(''); await page.waitForTimeout(100);
-      ok(await page.locator('#bm-copy').isVisible() && await page.locator('#bm-open').getAttribute('aria-disabled') === 'true', 'clearing field keeps flow, disables open');
-      await page.locator('#tab-url').fill('suumo.jp'); await page.waitForTimeout(100);
-      eq(await page.locator('#bm-open').getAttribute('href'), 'https://suumo.jp/', 'scheme-less host enables open');
-      await page.locator('#tab-url').fill(`${BASE}/mamazon.html`); await page.waitForTimeout(100);
-      ok(await page.locator('#bm-copy').isVisible() && (await page.locator('#bm-hint').textContent()).includes('移動できます'), 'same-origin URL shows note, flow stays');
-      ok(await page.locator('#bm-open').getAttribute('aria-disabled') === 'true', 'same-origin: bookmarklet open disabled');
+      eq((await gap()).d, g0.d, 'typing an external URL changes no layout');
+      await page.locator('#btn-start').click();
+      const st = await page.locator('#status').textContent();
+      ok(st.includes('外部サイトはこの画面からは操作できません。拡張機能かブックマークレットで使えます。') && st.includes('くわしい手順'), 'start with external URL shows one-line status ' + st);
+      eq(await page.locator('#status a[href="bookmarklet.html"]').count(), 1, 'status links to bookmarklet.html');
+      eq(await page.locator('#btn-start').isDisabled(), false, 'start not running');
+      eq((await gap()).d, g0.d, 'status does not change prompt spacing');
+      await page.locator('#tab-url').fill(`${BASE}/mamazon.html`);
       await page.locator('#tab-open').click(); await page.waitForURL(/mamazon\.html/);
       ok(errors.length === 0, 'no console errors ' + errors);
+      await ctx.close();
+    }
+    {
+      // external URL + 開く opens a new tab
+      const { ctx, page } = await newPage(proj);
+      await page.goto(`${BASE}/sites.html`); await openPanel(page);
+      await page.locator('#tab-select').selectOption('__url');
+      await page.locator('#tab-url').fill('https://example.com/');
+      await page.route('https://example.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: 'x' }));
+      const [pop] = await Promise.all([ctx.waitForEvent('page', { timeout: 3000 }).catch(() => null), page.locator('#tab-open').click()]);
+      ok(!!pop || /example\.com/.test(page.url()), 'external open: new tab (or same-tab fallback)');
       await ctx.close();
     }
     {
@@ -352,7 +333,7 @@ for (const proj of PROJECTS) {
       await page.evaluate(async () => { for (const k of await caches.keys()) { const c = await caches.open(k); await c.put(new Request(new URL('js/panel.js', location.href).href), new Response('/*stale*/export const PRESETS=[];', { headers: { 'content-type': 'text/javascript' } })); } await caches.open('jev-demo-v3'); });
       await page.reload(); await page.waitForSelector('#panel'); await openPanel(page);
       await page.locator('#tab-select').selectOption('__url');
-      ok(await page.locator('#bm-copy').isVisible(), 'stale cached panel.js is bypassed (network-first)');
+      ok(await page.locator('#url-row').isVisible() && (await page.locator('#tab-url').getAttribute('placeholder')) === 'サイトのURLを入力', 'stale cached panel.js is bypassed (network-first)');
       eq(await page.evaluate(() => caches.keys()).then((k) => k.length), 2, 'seeded old cache exists until next activation');
       await ctx.close();
     }
