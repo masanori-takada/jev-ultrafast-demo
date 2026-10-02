@@ -123,3 +123,17 @@
   #panel[data-layout=side] header.hd { padding: 10px 12px 8px; }
 }
 #panel[data-layout=sheet] header.hd { padding-right: 56px; }
+
+/* ---- extension: docked right column (desktop) ---- */
+#panel[data-layout=sheet][data-dock] { left: auto; right: 0; top: 0; bottom: auto; width: 380px; max-width: 100vw; height: 100dvh !important; margin: 0; border-radius: 0; padding-bottom: 0; box-shadow: -6px 0 24px rgba(0,0,0,.35); }
+#panel[data-dock] .handle { display: none; }
+#panel[data-dock] .card { border-radius: 0; height: 100%; }
+/* ---- external-site flow ---- */
+#panel .note .btn.big { display: flex; width: 100%; min-height: 52px; margin: 10px 0 0; font-size: 15px; font-weight: 700; background: var(--p-blue); border: 0; color: #fff; text-decoration: none; }
+#panel .note a.btn.big { background: var(--p-card); border: 1px solid var(--p-border); color: var(--p-text); }
+#panel .note .bm-steps, #panel .note .bm-pc { margin-top: 10px; color: var(--p-text); font-size: 12px; line-height: 1.6; }
+#panel .note .bm-steps ol { margin: 4px 0 0; padding-left: 20px; }
+#panel .note .bm-ok { margin-top: 6px; color: var(--p-ok); min-height: 1em; }
+#panel .note .bm-text { width: 100%; height: 80px; margin-top: 6px; font-size: 16px; background: var(--p-card); color: var(--p-text); border: 1px solid var(--p-border); border-radius: 8px; box-sizing: border-box; }
+#panel .note .bm-text[hidden] { display: none; }
+#panel .note .bm-more { display: block; margin-top: 8px; color: var(--p-blue); font-size: 12px; }
