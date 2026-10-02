@@ -36,7 +36,15 @@ export function bundle() {
   return code.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('//')).join('\n');
 }
 
+function syncSwCache() {
+  const id = /BUILD_ID\s*=\s*'([^']+)'/.exec(fs.readFileSync(path.join(JS, 'version.js'), 'utf8'))[1];
+  const f = path.join(WEB, 'sw.js'); const src = fs.readFileSync(f, 'utf8');
+  const out = src.replace(/const CACHE = '[^']*';/, `const CACHE = '${id}';`);
+  if (out !== src) fs.writeFileSync(f, out);
+}
+
 function main() {
+syncSwCache();
 const code = bundle();
 fs.writeFileSync(path.join(WEB, 'bookmarklet.js'), code);
 // minimal percent-encoding keeps the link short (raw UTF-8 is fine in href); newlines must survive as %0A

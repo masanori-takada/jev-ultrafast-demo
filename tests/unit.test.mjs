@@ -190,3 +190,10 @@ test('bookmarkletCode: full self-contained javascript: text, no fetch stub, deco
   } finally { globalThis.fetch = realFetch; }
   assert.equal(decodeURIComponent(encodeBookmarklet('a%b#c\nd\r').slice(11)), 'a%b#c\nd\r');
 });
+test('sw.js cache name equals the build id (version.js) and is shown in the panel', async () => {
+  const { BUILD_ID } = await import('../web/js/version.js');
+  const sw = fs.readFileSync(new URL('../web/sw.js', import.meta.url), 'utf8');
+  assert.equal(/const CACHE = '([^']+)'/.exec(sw)[1], BUILD_ID);
+  assert.match(BUILD_ID, /^build \d{4}-\d{2}-\d{2} v\d+$/);
+  assert.ok(/cache: 'no-cache'/.test(sw) && /clients\.claim/.test(sw) && /skipWaiting/.test(sw));
+});
