@@ -1,9 +1,9 @@
-// Network-first for pages/code (offline falls back to cache), cache-first for the rest. Bump CACHE to invalidate.
-const CACHE = 'jev-demo-v3';
+// Same-origin GETs: network-first with cache:'no-cache' (GitHub Pages sends max-age=600) and offline cache fallback. Bump CACHE to invalidate.
+const CACHE = 'build 2026-10-03 v1'; // synced from js/version.js by tools/build-bookmarklet.mjs
 const FILES = [
   './', 'index.html', 'mamazon.html', 'form.html', 'sites.html', 'bookmarklet.html', 'bookmarklet.js', 'manifest.webmanifest',
   'css/site.css', 'css/panel.css', 'css/pages.css',
-  'js/main.js', 'js/app.js', 'js/panel.js', 'js/site.js', 'js/data.js', 'js/art.js', 'js/filter.js', 'js/engine.js', 'js/mamazon.js', 'js/sw-register.js',
+  'js/main.js', 'js/app.js', 'js/panel.js', 'js/site.js', 'js/data.js', 'js/art.js', 'js/filter.js', 'js/engine.js', 'js/mamazon.js', 'js/sw-register.js', 'js/version.js',
   'js/adapters/index.js', 'js/adapters/demo.js', 'js/adapters/suumo.js',
   'js/generic/text.js', 'js/generic/intent.js', 'js/generic/scan.js', 'js/generic/match.js', 'js/generic/agent.js', 'js/generic/safety.js', 'js/generic/jev.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable.svg',
@@ -15,12 +15,8 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
   const fallback = () => caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || (e.request.mode === 'navigate' ? caches.match('index.html') : Response.error()));
-  if (e.request.mode === 'navigate' || /\.(js|css|html)$/.test(url.pathname) || url.pathname.endsWith('/')) {
-    e.respondWith(fetch(e.request, { cache: 'no-cache' }).then((r) => {
-      if (r.ok) { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {}); }
-      return r;
-    }).catch(fallback));
-    return;
-  }
-  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || fetch(e.request).catch(fallback)));
+  e.respondWith(fetch(e.request, { cache: 'no-cache' }).then((r) => {
+    if (r.ok) { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {}); }
+    return r;
+  }).catch(fallback));
 });

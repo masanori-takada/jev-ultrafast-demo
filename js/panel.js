@@ -1,6 +1,7 @@
 // Jev Ultrafast panel UI (pure UI: no engine knowledge). Used by the demo pages and by the bookmarklet.
 import { fmtTimer } from './engine.js';
 import { KEY_STORAGE } from './generic/jev.js';
+import { BUILD_ID } from './version.js';
 
 export const PRESETS = [
   { id: 'mamazon', label: '🛒 Mamazon：パソコンを最安で購入', page: 'mamazon.html' },
@@ -76,6 +77,7 @@ const HTML = (o) => `
       </details>
       <div class="foot" id="foot" hidden>操作は今開いているタブで行われます。実サイトでは購入・送信が本当に実行されるので注意。</div>
     </div>
+    <div class="build" id="build-id">${esc(BUILD_ID)}</div>
   </div>
 </aside>`;
 
@@ -102,52 +104,60 @@ export function mountPanel(host, opts = {}) {
     sel.innerHTML = DEMO_SITES.map((s) => `<option value="${s.page}">${esc(s.title)} — ${esc(loc.origin)}/${esc(s.page)}</option>`).join('') + '<option value="__url">その他のURLを入力…</option>';
     sel.value = DEMO_SITES.some((s) => s.page === cur) ? cur : 'sites.html';
     const urlRow = $('#url-row'), note = $('#tab-note');
-    let shownFor = null, scrolled = false;
-    const showExternalFlow = (u) => {
-      if (shownFor === u.href && !note.hidden) return;
-      shownFor = u.href;
-      const codeP = bookmarkletCode(loc.href);
-      codeP.catch(() => {});
+    let flowOn = false, scrolled = false;
+    const urlEl = $('#tab-url');
+    const parseUrl = (v) => { v = v.trim(); if (!v) return null; try { const u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`); return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u : null; } catch { return null; } };
+    // keeps the 'サイトを開く' target + hint in sync with the typed URL (never blocks the flow itself)
+    const updateOpen = () => {
+      const a = note.querySelector('#bm-open'), hint = note.querySelector('#bm-hint'), title = note.querySelector('#bm-title');
+      if (!a) return;
+      const u = parseUrl(urlEl.value), same = !!u && u.origin === loc.origin;
+      const live = !!u && !same;
+      if (live) { a.setAttribute('href', u.href); a.removeAttribute('aria-disabled'); } else { a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); }
+      hint.textContent = same ? 'このサイトは上の「開く」で移動できます（Jevパネルが出ます）。' : u ? '' : 'URLを入力すると開けます';
+      title.textContent = live ? `${u.hostname} は、ここでは操作できません。下の手順で Jev を出します。` : same ? 'このサイトは、ここで直接開けます。' : '操作したいサイトは、ここでは操作できません。下の手順で Jev を出します。';
+    };
+    const showExternalFlow = () => {
+      if (flowOn) { updateOpen(); return; }
+      flowOn = true;
+      bookmarkletCode(loc.href).catch(() => {}); // warm the cache; failures are retried on tap
       note.hidden = false;
-      note.innerHTML = `<b>${esc(u.hostname)} は、ここでは操作できません。</b>下の手順で Jev を出します。
+      note.innerHTML = `<b id="bm-title"></b>
         <button type="button" class="btn big" id="bm-copy">ブックマークレットをコピー</button>
         <div class="bm-ok" id="bm-ok" role="status" aria-live="polite"></div>
         <textarea id="bm-text" class="bm-text" readonly hidden aria-label="ブックマークレットのコード"></textarea>
         <div class="bm-steps"><b>iPhone（Safari）・Android（Chrome）</b>
           <ol><li>このページをブックマークに追加（共有 → ブックマークを追加）</li><li>名前を「Jev」にして保存</li><li>保存したブックマークを編集し、URLの欄にコピーした文字を貼り付けて保存</li><li>「サイトを開く」でサイトを開き、そのブックマーク「Jev」をタップ</li></ol></div>
-        <a class="btn big" id="bm-open" href="${esc(u.href)}" target="_blank" rel="noopener">サイトを開く</a>
+        <a class="btn big" id="bm-open" target="_blank" rel="noopener">サイトを開く</a>
+        <div class="bm-hint" id="bm-hint"></div>
         <div class="bm-pc">PC は拡張機能が便利です（ボタン1回でパネルが出ます）。</div>
         <a class="bm-more" href="bookmarklet.html">くわしい手順ページ</a>`;
       const ok = note.querySelector('#bm-ok'), ta = note.querySelector('#bm-text');
+      note.querySelector('#bm-open').addEventListener('click', (e) => { if (e.currentTarget.getAttribute('aria-disabled') === 'true') e.preventDefault(); });
       note.querySelector('#bm-copy').addEventListener('click', async () => {
         let code;
-        try { code = await codeP; } catch { ok.textContent = 'コードを読み込めませんでした。通信を確認してもう一度押してください。'; return; }
+        try { code = await bookmarkletCode(loc.href); } catch { ok.textContent = 'コードを読み込めませんでした。通信を確認してもう一度押してください。'; return; }
         const kb = `（約 ${Math.round(code.length / 1024)} KB）`;
         try { await navigator.clipboard.writeText(code); ok.textContent = `コピーしました。${kb}`; ta.hidden = true; }
         catch { ta.value = code; ta.hidden = false; ta.focus(); ta.select(); ok.textContent = `コピーできませんでした。下の文字を全部選んでコピーしてください。${kb}`; }
       });
+      updateOpen();
       if (!scrolled) { scrolled = true; try { note.scrollIntoView({ block: 'nearest' }); } catch {} }
     };
-    const parseUrl = (v) => { v = v.trim(); if (!v) return null; try { const u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`); return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u : null; } catch { return null; } };
-    const syncFlow = () => {
-      const u = parseUrl($('#tab-url').value);
-      if (u && u.origin !== loc.origin) showExternalFlow(u); else { note.hidden = true; note.textContent = ''; shownFor = null; }
-    };
-    let deb; const later = () => { clearTimeout(deb); deb = setTimeout(syncFlow, 250); };
-    $('#tab-url').addEventListener('input', later);
-    $('#tab-url').addEventListener('paste', () => setTimeout(syncFlow, 0));
-    for (const ev of ['change', 'blur']) $('#tab-url').addEventListener(ev, syncFlow);
+    const hideFlow = () => { flowOn = false; note.hidden = true; note.textContent = ''; };
+    const syncFlow = () => { if (flowOn) updateOpen(); };
+    let deb; const later = () => { clearTimeout(deb); deb = setTimeout(syncFlow, 0); };
+    for (const ev of ['input', 'keyup', 'change', 'blur', 'paste']) urlEl.addEventListener(ev, ev === 'paste' ? () => setTimeout(syncFlow, 0) : (ev === 'input' || ev === 'keyup' ? later : syncFlow));
     const openExternal = () => {
-      const v = $('#tab-url').value.trim(); let u;
-      try { u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`); } catch { u = null; }
-      if (!u) { note.hidden = false; note.textContent = 'URLの形式が正しくありません。'; return; }
+      const u = parseUrl(urlEl.value);
+      if (!u) { showExternalFlow(); return; }
       if (u.origin === loc.origin) { loc.href = u.href; return; }
-      showExternalFlow(u);
+      showExternalFlow();
     };
     const box = $('#tab-box');
     const showUrl = (on) => { urlRow.hidden = !on; sel.hidden = on; box.dataset.mode = on ? 'url' : 'select'; };
-    sel.addEventListener('change', () => { if (sel.value === '__url') { showUrl(true); $('#tab-url').focus(); } else { showUrl(false); note.hidden = true; if (sel.value !== cur) loc.href = sel.value; } });
-    $('#tab-url').addEventListener('keydown', (e) => { if (e.key === 'Escape') { showUrl(false); sel.value = DEMO_SITES.some((s) => s.page === cur) ? cur : 'sites.html'; } });
+    sel.addEventListener('change', () => { if (sel.value === '__url') { showUrl(true); showExternalFlow(); } else { showUrl(false); hideFlow(); if (sel.value !== cur) loc.href = sel.value; } });
+    $('#tab-url').addEventListener('keydown', (e) => { if (e.key === 'Escape') { showUrl(false); hideFlow(); sel.value = DEMO_SITES.some((s) => s.page === cur) ? cur : 'sites.html'; } });
     $('#tab-open').addEventListener('click', openExternal);
     $('#tab-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); openExternal(); } });
     // presets open the demo page and fill the prompt
