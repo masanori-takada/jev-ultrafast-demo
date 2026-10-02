@@ -52,7 +52,7 @@ const HTML = (o) => `
         ${o.mode === 'bookmarklet'
           ? `<div class="tabbox ro"><span class="ro-text" id="tab-ro"></span></div>`
           : `<div class="tabbox" id="tab-box"><select id="tab-select" aria-labelledby="tab-lbl"></select>
-               <div class="urlrow" id="url-row" hidden><input id="tab-url" type="url" inputmode="url" placeholder="https://（操作したいサイトのURL）" aria-label="操作するサイトのURL"><button type="button" class="btn small" id="tab-open">開く</button></div></div>
+               <div class="urlrow" id="url-row" hidden><input id="tab-url" type="url" inputmode="url" placeholder="SUUMO などのURLを貼ると、使い方が出ます" aria-label="操作するサイトのURL"><button type="button" class="btn small" id="tab-open">開く</button></div></div>
              <div class="note" id="tab-note" hidden></div>`}
       </div>
       <div class="sect">
@@ -102,11 +102,14 @@ export function mountPanel(host, opts = {}) {
     sel.innerHTML = DEMO_SITES.map((s) => `<option value="${s.page}">${esc(s.title)} — ${esc(loc.origin)}/${esc(s.page)}</option>`).join('') + '<option value="__url">その他のURLを入力…</option>';
     sel.value = DEMO_SITES.some((s) => s.page === cur) ? cur : 'sites.html';
     const urlRow = $('#url-row'), note = $('#tab-note');
+    let shownFor = null, scrolled = false;
     const showExternalFlow = (u) => {
+      if (shownFor === u.href && !note.hidden) return;
+      shownFor = u.href;
       const codeP = bookmarkletCode(loc.href);
       codeP.catch(() => {});
       note.hidden = false;
-      note.innerHTML = `<b>${esc(u.hostname)} は、この画面からは操作できません。</b>（ブラウザの制限）<br>下の手順で、そのサイトの上に Jev を出します。
+      note.innerHTML = `<b>${esc(u.hostname)} は、ここでは操作できません。</b>下の手順で Jev を出します。
         <button type="button" class="btn big" id="bm-copy">ブックマークレットをコピー</button>
         <div class="bm-ok" id="bm-ok" role="status" aria-live="polite"></div>
         <textarea id="bm-text" class="bm-text" readonly hidden aria-label="ブックマークレットのコード"></textarea>
@@ -123,7 +126,17 @@ export function mountPanel(host, opts = {}) {
         try { await navigator.clipboard.writeText(code); ok.textContent = `コピーしました。${kb}`; ta.hidden = true; }
         catch { ta.value = code; ta.hidden = false; ta.focus(); ta.select(); ok.textContent = `コピーできませんでした。下の文字を全部選んでコピーしてください。${kb}`; }
       });
+      if (!scrolled) { scrolled = true; try { note.scrollIntoView({ block: 'nearest' }); } catch {} }
     };
+    const parseUrl = (v) => { v = v.trim(); if (!v) return null; try { const u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`); return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u : null; } catch { return null; } };
+    const syncFlow = () => {
+      const u = parseUrl($('#tab-url').value);
+      if (u && u.origin !== loc.origin) showExternalFlow(u); else { note.hidden = true; note.textContent = ''; shownFor = null; }
+    };
+    let deb; const later = () => { clearTimeout(deb); deb = setTimeout(syncFlow, 250); };
+    $('#tab-url').addEventListener('input', later);
+    $('#tab-url').addEventListener('paste', () => setTimeout(syncFlow, 0));
+    for (const ev of ['change', 'blur']) $('#tab-url').addEventListener(ev, syncFlow);
     const openExternal = () => {
       const v = $('#tab-url').value.trim(); let u;
       try { u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`); } catch { u = null; }

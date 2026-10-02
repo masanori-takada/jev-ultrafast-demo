@@ -1,5 +1,5 @@
-// Cache-first app shell. Bump CACHE to invalidate.
-const CACHE = 'jev-demo-v1';
+// Network-first for pages/code (offline falls back to cache), cache-first for the rest. Bump CACHE to invalidate.
+const CACHE = 'jev-demo-v3';
 const FILES = [
   './', 'index.html', 'mamazon.html', 'form.html', 'sites.html', 'bookmarklet.html', 'bookmarklet.js', 'manifest.webmanifest',
   'css/site.css', 'css/panel.css', 'css/pages.css',
@@ -14,5 +14,13 @@ self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
-  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || fetch(e.request).catch(() => (e.request.mode === 'navigate' ? caches.match('index.html') : Response.error()))));
+  const fallback = () => caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || (e.request.mode === 'navigate' ? caches.match('index.html') : Response.error()));
+  if (e.request.mode === 'navigate' || /\.(js|css|html)$/.test(url.pathname) || url.pathname.endsWith('/')) {
+    e.respondWith(fetch(e.request, { cache: 'no-cache' }).then((r) => {
+      if (r.ok) { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {}); }
+      return r;
+    }).catch(fallback));
+    return;
+  }
+  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || fetch(e.request).catch(fallback)));
 });
