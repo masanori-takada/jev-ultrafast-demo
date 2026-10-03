@@ -1,6 +1,6 @@
 (function () {
 'use strict';
-const PANEL_CSS = "#panel, #panel *, #panel *::before, #panel *::after { box-sizing: border-box; } #panel { --p-bg: #0e111c; --p-card: #171b2b; --p-border: rgba(255,255,255,.1); --p-text: #e8eaf2; --p-muted: #8a90a6; --p-blue: #5b6cff; --p-link: #6f8bff; --p-ok: #4ad295; --p-instr: #13172a; --p-amber: #f0b64a; --p-err: #ff6b6b; --p-strip: #eef0f2; --v-select: #7d7dff; --v-click: #6f8bff; --v-type: #6f8bff; font: 12px/1.45 \"Hiragino Sans\",\"Noto Sans JP\",system-ui,-apple-system,\"Segoe UI\",sans-serif; color: var(--p-text); background: var(--p-strip); display: flex; flex-direction: column; min-height: 0; text-align: left; letter-spacing: 0; } #panel .chrome { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; color: #222; font-weight: 700; font-size: 13px; flex: none; } #panel .chrome .jicon { width: 18px; height: 18px; border-radius: 4px; background: #3a3d44; color: #fff; font-size: 10px; display: grid; place-items: center; font-weight: 800; } #panel .chrome .sp { flex: 1; } #panel .chrome button { all: unset; cursor: pointer; width: 28px; height: 28px; display: grid; place-items: center; color: #333; border-radius: 6px; font-size: 14px; } #panel .chrome button:focus-visible { outline: 2px solid var(--p-blue); } #panel .card { background: var(--p-bg); border-radius: 10px; margin: 0 6px 6px; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; } #panel .scroll { overflow-y: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; overscroll-behavior: contain; } #panel .handle { display: none; } #panel header.hd { display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 10px; border-bottom: 1px solid rgba(255,255,255,.06); flex: none; } #panel header.hd h2 { margin: 0; font-size: 14px; font-weight: 700; color: #fff; display: flex; gap: 6px; align-items: center; } #panel header.hd h2 i { color: var(--p-blue); font-style: normal; font-size: 12px; } #panel #conn-badge { font-size: 10px; color: var(--p-ok); background: rgba(74,210,149,.12); border: 1px solid rgba(74,210,149,.3); border-radius: 10px; padding: 2px 8px; white-space: nowrap; } #panel #conn-badge[data-state=connecting] { color: var(--p-muted); background: rgba(255,255,255,.05); border-color: var(--p-border); } #panel .sect { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.06); } #panel .lbl { display: block; font-size: 10px; color: var(--p-muted); margin-bottom: 6px; } #panel .lbl small { font-size: 10px; opacity: .8; } #panel .tabbox { position: relative; } #panel .tabbox select { appearance: none; -webkit-appearance: none; width: 100%; background: var(--p-card); color: var(--p-text); border: 1px solid var(--p-border); border-radius: 8px; padding: 9px 26px 9px 10px; font: inherit; font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; min-height: 44px; } #panel .tabbox::after { content: '▾'; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--p-muted); pointer-events: none; font-size: 11px; } #panel .tabbox.ro::after { content: none; } #panel .tabbox .ro-text { display: block; background: var(--p-card); border: 1px solid var(--p-border); border-radius: 8px; padding: 9px 10px; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; line-height: 24px; } #panel .urlrow { display: flex; gap: 6px; } #panel .tabbox select[hidden] { display: none; } #panel .tabbox:has(.urlrow:not([hidden]))::after { content: none; } #panel .urlrow input { flex: 1; min-width: 0; background: var(--p-card); color: var(--p-text); border: 1px solid var(--p-border); border-radius: 8px; padding: 0 10px; font: inherit; font-size: 11.5px; min-height: 44px; } #panel .tabbox:has(.urlrow:not([hidden])):focus-within { border-radius: 8px; } #panel .urlrow input:focus, #panel #prompt:focus, #panel .keyrow input:focus { outline: none; border-color: var(--p-blue); box-shadow: 0 0 0 3px rgba(79,109,245,.25); } #panel .btn { all: unset; box-sizing: border-box; cursor: pointer; border-radius: 8px; min-height: 44px; min-width: 44px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; font-size: 12px; text-align: center; } #panel .btn:focus-visible, #panel .preset:focus-visible { outline: 2px solid #fff; outline-offset: 2px; } #panel .btn.small { background: var(--p-card); border: 1px solid var(--p-border); color: var(--p-text); font-weight: 600; } #panel .urlrow[hidden] { display: none; } #panel #prompt { width: 100%; min-height: 168px; resize: vertical; background: #12151f; color: var(--p-text); border: 1px solid var(--p-border); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 13px; line-height: 1.6; } #panel .presets { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-top: 10px; } #panel .preset { all: unset; box-sizing: border-box; cursor: pointer; max-width: 100%; min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; border: 1px solid var(--p-border); border-radius: 999px; background: rgba(23,27,43,.6); color: var(--p-muted); font-size: 11px; } #panel .preset:hover { color: var(--p-text); border-color: rgba(255,255,255,.22); } #panel .ctl { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.06); flex: none; } #panel #btn-start { background: var(--p-blue); color: #fff; min-width: 90px; } #panel #btn-start:disabled, #panel #btn-start[aria-disabled=true] { background: #3a4580; opacity: .6; cursor: default; } #panel #btn-stop { color: var(--p-muted); border: 1px solid transparent; background: transparent; min-width: 70px; } #panel #btn-stop:not(:disabled) { color: #fff; background: #222639; border-color: rgba(255,255,255,.12); } #panel #btn-stop:disabled { cursor: default; opacity: .75; } #panel #timer { margin-left: auto; font-weight: 700; font-size: 16px; color: #fff; font-variant-numeric: tabular-nums; } #panel .stat { padding: 10px 12px 6px; display: flex; gap: 10px; align-items: center; font-size: 11px; flex: none; } #panel .stat .k { color: var(--p-muted); } #panel #status { font-weight: 700; } #panel #status[data-state=running] { color: var(--p-link); } #panel #status[data-state=done] { color: var(--p-ok); } #panel #status[data-state=stopped] { color: var(--p-amber); } #panel #status[data-state=error] { color: var(--p-err); } #panel #instr { margin: 4px 12px 8px; padding: 10px; background: var(--p-instr); border: 1px solid rgba(255,255,255,.06); border-radius: 8px; color: var(--p-muted); font-size: 11px; line-height: 1.55; flex: none; word-break: break-word; } #panel #instr[hidden] { display: none; } #panel #log { padding: 2px 12px 10px; font-size: 11.5px; } #panel #log .row { display: grid; grid-template-columns: 56px 76px 1fr; gap: 0 6px; padding: 5px 0; border-bottom: 1px dotted rgba(255,255,255,.12); animation: jev-in .15s ease-out; align-items: baseline; } #panel #log .ms { color: var(--p-muted); text-align: left; font-variant-numeric: tabular-nums; } #panel #log .verb { font-weight: 700; color: var(--v-click); } #panel #log .verb.SELECT { color: var(--v-select); } #panel #log .verb.TYPE_TEXT { color: var(--v-type); } #panel #log .verb.NOTE { color: var(--p-muted); } #panel #log .verb.SKIP { color: var(--p-amber); } #panel #log .label { color: var(--p-text); word-break: break-word; } #panel #log .label .val { color: var(--p-ok); } #panel .foot { padding: 8px 12px; font-size: 10px; color: var(--p-muted); border-top: 1px solid rgba(255,255,255,.06); flex: none; } #panel .foot[hidden] { display: none; } #panel details.settings { padding: 8px 12px; border-top: 1px solid rgba(255,255,255,.06); font-size: 11px; color: var(--p-muted); flex: none; } #panel details.settings summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; } #panel .keyrow { display: flex; gap: 6px; margin-top: 4px; } #panel .keyrow input { flex: 1; min-width: 0; min-height: 44px; background: var(--p-card); color: var(--p-text); border: 1px solid var(--p-border); border-radius: 8px; padding: 0 10px; font: inherit; font-size: 13px; } .jev-target { outline: 2px solid #2f6bff !important; outline-offset: 2px; box-shadow: 0 0 0 5px rgba(47,107,255,.25) !important; transition: box-shadow .2s; } @keyframes jev-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } } @media (prefers-reduced-motion: reduce) { #panel #log .row { animation: none; } } #panel[data-layout=sheet] { --collapsed: 168px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 2147483600; max-width: 560px; margin: 0 auto; height: calc(var(--collapsed) + env(safe-area-inset-bottom, 0px)); border-radius: 16px 16px 0 0; box-shadow: 0 -6px 24px rgba(0,0,0,.35); transition: height .22s ease; padding-bottom: env(safe-area-inset-bottom, 0px); background: var(--p-bg); } #panel[data-layout=sheet][data-snap=half] { height: 55dvh; } #panel[data-layout=sheet][data-snap=full] { height: 88dvh; } #panel[data-layout=sheet][data-dragging] { transition: none; } #panel[data-layout=sheet] .chrome { display: none; } #panel[data-layout=sheet] .card { margin: 0; border-radius: 16px 16px 0 0; } #panel[data-layout=sheet] .handle { display: flex; align-items: center; justify-content: center; height: 24px; flex: none; touch-action: none; cursor: grab; position: relative; } #panel[data-layout=sheet] .handle::before { content: ''; position: absolute; left: 0; right: 0; top: -10px; height: 44px; } #panel[data-layout=sheet] .handle span { width: 40px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.3); } #panel[data-layout=sheet] header.hd { padding: 0 12px 6px; border: 0; } #panel[data-layout=sheet] .ctl { padding: 6px 12px; border: 0; } #panel[data-layout=sheet] .stat { padding: 2px 12px 8px; } #panel[data-layout=sheet][data-snap=collapsed] .scroll > :not(.ctl):not(.stat) { display: none; } #panel[data-layout=sheet] #prompt { font-size: 16px; } #panel[data-layout=sheet] .urlrow input, #panel[data-layout=sheet] .keyrow input { font-size: 16px; } #panel[data-layout=sheet] .tabbox select { font-size: 14px; } #panel[data-layout=sheet] #sheet-close { display: inline-grid; } #panel #sheet-close { all: unset; display: none; position: absolute; right: 8px; top: 2px; width: 44px; height: 44px; place-items: center; color: var(--p-muted); cursor: pointer; font-size: 16px; z-index: 2; } #panel[data-layout=sheet] #sheet-close { display: grid; } @media (max-height: 500px) and (orientation: landscape) { #panel[data-layout=sheet] { left: auto; right: 0; width: 40vw; max-width: none; height: 100dvh !important; border-radius: 0; } } #panel[data-layout=side] #prompt { min-height: 254px; } #panel[data-layout=side] { height: 100%; width: 100%; border-radius: 8px; } @media (pointer: fine) { #panel[data-layout=side] .preset { min-height: 30px; } #panel[data-layout=side] .presets { gap: 6px; margin-top: 8px; } #panel[data-layout=side] .btn, #panel[data-layout=side] .tabbox select, #panel[data-layout=side] .tabbox .ro-text { min-height: 36px; } #panel[data-layout=side] .tabbox .ro-text { line-height: 18px; } #panel[data-layout=side] .sect { padding: 8px 12px; } #panel[data-layout=side] .ctl { padding: 8px 12px; } #panel[data-layout=side] header.hd { padding: 10px 12px 8px; } } #panel[data-layout=sheet] header.hd { padding-right: 56px; } #panel[data-layout=sheet][data-dock] { left: auto; right: 0; top: 0; bottom: auto; width: 380px; max-width: 100vw; height: 100dvh !important; margin: 0; border-radius: 0; padding-bottom: 0; box-shadow: -6px 0 24px rgba(0,0,0,.35); } #panel[data-dock] .handle { display: none; } #panel[data-dock] .card { border-radius: 0; height: 100%; } #panel .build { flex: none; padding: 4px 12px 6px; font-size: 10px; color: var(--p-muted); text-align: right; border-top: 1px solid rgba(255,255,255,.06); } #panel .status-link { color: var(--p-blue); font-size: 11px; margin-left: 4px; }";
+const PANEL_CSS = "#panel, #panel *, #panel *::before, #panel *::after { box-sizing: border-box; } #panel { --p-bg: #0e111c; --p-card: #171b2b; --p-border: rgba(255,255,255,.1); --p-text: #e8eaf2; --p-muted: #8a90a6; --p-blue: #5b6cff; --p-link: #6f8bff; --p-ok: #4ad295; --p-instr: #13172a; --p-amber: #f0b64a; --p-err: #ff6b6b; --p-strip: #eef0f2; --v-select: #7d7dff; --v-click: #6f8bff; --v-type: #6f8bff; font: 12px/1.45 \"Hiragino Sans\",\"Noto Sans JP\",system-ui,-apple-system,\"Segoe UI\",sans-serif; color: var(--p-text); background: var(--p-strip); display: flex; flex-direction: column; min-height: 0; text-align: left; letter-spacing: 0; } #panel .chrome { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; color: #222; font-weight: 700; font-size: 13px; flex: none; } #panel .chrome .jicon { width: 18px; height: 18px; border-radius: 4px; background: #3a3d44; color: #fff; font-size: 10px; display: grid; place-items: center; font-weight: 800; } #panel .chrome .sp { flex: 1; } #panel .chrome button { all: unset; cursor: pointer; width: 28px; height: 28px; display: grid; place-items: center; color: #333; border-radius: 6px; font-size: 14px; } #panel .chrome button:focus-visible { outline: 2px solid var(--p-blue); } #panel .card { background: var(--p-bg); border-radius: 10px; margin: 0 6px 6px; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; } #panel .scroll { overflow-y: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; overscroll-behavior: contain; } #panel .handle { display: none; } #panel header.hd { display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 10px; border-bottom: 1px solid rgba(255,255,255,.06); flex: none; } #panel header.hd h2 { margin: 0; font-size: 14px; font-weight: 700; color: #fff; display: flex; gap: 6px; align-items: center; } #panel header.hd h2 i { color: var(--p-blue); font-style: normal; font-size: 12px; } #panel #conn-badge { font-size: 10px; color: var(--p-ok); background: rgba(74,210,149,.12); border: 1px solid rgba(74,210,149,.3); border-radius: 10px; padding: 2px 8px; white-space: nowrap; } #panel #conn-badge[data-state=connecting] { color: var(--p-muted); background: rgba(255,255,255,.05); border-color: var(--p-border); } #panel .sect { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.06); } #panel .lbl { display: block; font-size: 10px; color: var(--p-muted); margin-bottom: 6px; } #panel .lbl small { font-size: 10px; opacity: .8; } #panel .tabbox { position: relative; } #panel .tabbox select { appearance: none; -webkit-appearance: none; width: 100%; background: var(--p-card); color: var(--p-text); border: 1px solid var(--p-border); border-radius: 8px; padding: 9px 26px 9px 10px; font: inherit; font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; min-height: 44px; } #panel .tabbox::after { content: '▾'; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--p-muted); pointer-events: none; font-size: 11px; } #panel .tabbox.ro::after { content: none; } #panel .tabbox .ro-text { display: block; background: var(--p-card); border: 1px solid var(--p-border); border-radius: 8px; padding: 9px 10px; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; line-height: 24px; } #panel .urlrow { display: flex; gap: 6px; } #panel .tabbox select[hidden] { display: none; } #panel .tabbox:has(.urlrow:not([hidden]))::after { content: none; } #panel .urlrow input { flex: 1; min-width: 0; background: var(--p-card); color: var(--p-text); border: 1px solid var(--p-border); border-radius: 8px; padding: 0 10px; font: inherit; font-size: 11.5px; min-height: 44px; } #panel .tabbox:has(.urlrow:not([hidden])):focus-within { border-radius: 8px; } #panel .urlrow input:focus, #panel #prompt:focus, #panel .keyrow input:focus { outline: none; border-color: var(--p-blue); box-shadow: 0 0 0 3px rgba(79,109,245,.25); } #panel .btn { all: unset; box-sizing: border-box; cursor: pointer; border-radius: 8px; min-height: 44px; min-width: 44px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; font-size: 12px; text-align: center; } #panel .btn:focus-visible, #panel .preset:focus-visible { outline: 2px solid #fff; outline-offset: 2px; } #panel .btn.small { background: var(--p-card); border: 1px solid var(--p-border); color: var(--p-text); font-weight: 600; } #panel .urlrow[hidden] { display: none; } #panel #prompt { width: 100%; min-height: 168px; resize: vertical; background: #12151f; color: var(--p-text); border: 1px solid var(--p-border); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 13px; line-height: 1.6; } #panel .presets { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-top: 10px; } #panel .preset { all: unset; box-sizing: border-box; cursor: pointer; max-width: 100%; min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; border: 1px solid var(--p-border); border-radius: 999px; background: rgba(23,27,43,.6); color: var(--p-muted); font-size: 11px; } #panel .preset:hover { color: var(--p-text); border-color: rgba(255,255,255,.22); } #panel .ctl { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.06); flex: none; } #panel #btn-start { background: var(--p-blue); color: #fff; min-width: 90px; } #panel #btn-start:disabled, #panel #btn-start[aria-disabled=true] { background: #3a4580; opacity: .6; cursor: default; } #panel #btn-stop { color: var(--p-muted); border: 1px solid transparent; background: transparent; min-width: 70px; } #panel #btn-stop:not(:disabled) { color: #fff; background: #222639; border-color: rgba(255,255,255,.12); } #panel #btn-stop:disabled { cursor: default; opacity: .75; } #panel #timer { margin-left: auto; font-weight: 700; font-size: 16px; color: #fff; font-variant-numeric: tabular-nums; } #panel .stat { padding: 10px 12px 6px; display: flex; gap: 10px; align-items: center; font-size: 11px; flex: none; } #panel .stat .k { color: var(--p-muted); } #panel #status { font-weight: 700; } #panel #status[data-state=running] { color: var(--p-link); } #panel #status[data-state=done] { color: var(--p-ok); } #panel #status[data-state=stopped] { color: var(--p-amber); } #panel #status[data-state=error] { color: var(--p-err); } #panel #instr { margin: 4px 12px 8px; padding: 10px; background: var(--p-instr); border: 1px solid rgba(255,255,255,.06); border-radius: 8px; color: var(--p-muted); font-size: 11px; line-height: 1.55; flex: none; word-break: break-word; } #panel #instr[hidden] { display: none; } #panel #log { padding: 2px 12px 10px; font-size: 11.5px; } #panel #log .row { display: grid; grid-template-columns: 56px 76px 1fr; gap: 0 6px; padding: 5px 0; border-bottom: 1px dotted rgba(255,255,255,.12); animation: jev-in .15s ease-out; align-items: baseline; } #panel #log .ms { color: var(--p-muted); text-align: left; font-variant-numeric: tabular-nums; } #panel #log .verb { font-weight: 700; color: var(--v-click); } #panel #log .verb.SELECT { color: var(--v-select); } #panel #log .verb.TYPE_TEXT { color: var(--v-type); } #panel #log .verb.NOTE { color: var(--p-muted); } #panel #log .verb.SKIP { color: var(--p-amber); } #panel #log .label { color: var(--p-text); word-break: break-word; } #panel #log .label .val { color: var(--p-ok); } #panel .foot { padding: 8px 12px; font-size: 10px; color: var(--p-muted); border-top: 1px solid rgba(255,255,255,.06); flex: none; } #panel .foot[hidden] { display: none; } #panel details.settings { padding: 8px 12px; border-top: 1px solid rgba(255,255,255,.06); font-size: 11px; color: var(--p-muted); flex: none; } #panel details.settings summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; } #panel .keyrow { display: flex; gap: 6px; margin-top: 4px; } #panel .keyrow input { flex: 1; min-width: 0; min-height: 44px; background: var(--p-card); color: var(--p-text); border: 1px solid var(--p-border); border-radius: 8px; padding: 0 10px; font: inherit; font-size: 13px; } .jev-target { outline: 2px solid #2f6bff !important; outline-offset: 2px; box-shadow: 0 0 0 5px rgba(47,107,255,.25) !important; transition: box-shadow .2s; } @keyframes jev-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } } @media (prefers-reduced-motion: reduce) { #panel #log .row { animation: none; } } #panel[data-layout=sheet] { --collapsed: 168px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 2147483600; max-width: 560px; margin: 0 auto; height: calc(var(--collapsed) + env(safe-area-inset-bottom, 0px)); border-radius: 16px 16px 0 0; box-shadow: 0 -6px 24px rgba(0,0,0,.35); transition: height .22s ease; padding-bottom: env(safe-area-inset-bottom, 0px); background: var(--p-bg); } #panel[data-layout=sheet][data-snap=half] { height: 55dvh; } #panel[data-layout=sheet][data-snap=full] { height: 88dvh; } #panel[data-layout=sheet][data-dragging] { transition: none; } #panel[data-layout=sheet] .chrome { display: none; } #panel[data-layout=sheet] .card { margin: 0; border-radius: 16px 16px 0 0; } #panel[data-layout=sheet] .handle { display: flex; align-items: center; justify-content: center; height: 24px; flex: none; touch-action: none; cursor: grab; position: relative; } #panel[data-layout=sheet] .handle::before { content: ''; position: absolute; left: 0; right: 0; top: -10px; height: 44px; } #panel[data-layout=sheet] .handle span { width: 40px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.3); } #panel[data-layout=sheet] header.hd { padding: 0 12px 6px; border: 0; } #panel[data-layout=sheet] .ctl { padding: 6px 12px; border: 0; } #panel[data-layout=sheet] .stat { padding: 2px 12px 8px; } #panel[data-layout=sheet][data-snap=collapsed] .scroll > :not(.ctl):not(.stat) { display: none; } #panel[data-layout=sheet] #prompt { font-size: 16px; } #panel[data-layout=sheet] .urlrow input, #panel[data-layout=sheet] .keyrow input { font-size: 16px; } #panel[data-layout=sheet] .tabbox select { font-size: 14px; } #panel[data-layout=sheet] #sheet-close { display: inline-grid; } #panel #sheet-close { all: unset; display: none; position: absolute; right: 8px; top: 2px; width: 44px; height: 44px; place-items: center; color: var(--p-muted); cursor: pointer; font-size: 16px; z-index: 2; } #panel[data-layout=sheet] #sheet-close { display: grid; } @media (max-height: 500px) and (orientation: landscape) { #panel[data-layout=sheet] { left: auto; right: 0; width: 40vw; max-width: none; height: 100dvh !important; border-radius: 0; } } #panel[data-layout=side] #prompt { min-height: 254px; } #panel[data-layout=side] { height: 100%; width: 100%; border-radius: 8px; } @media (pointer: fine) { #panel[data-layout=side] .preset { min-height: 30px; } #panel[data-layout=side] .presets { gap: 6px; margin-top: 8px; } #panel[data-layout=side] .btn, #panel[data-layout=side] .tabbox select, #panel[data-layout=side] .tabbox .ro-text { min-height: 36px; } #panel[data-layout=side] .tabbox .ro-text { line-height: 18px; } #panel[data-layout=side] .sect { padding: 8px 12px; } #panel[data-layout=side] .ctl { padding: 8px 12px; } #panel[data-layout=side] header.hd { padding: 10px 12px 8px; } } #panel[data-layout=sheet] header.hd { padding-right: 56px; } #panel[data-layout=sheet][data-dock] { left: auto; right: 0; top: 0; bottom: auto; width: 380px; max-width: 100vw; height: 100dvh !important; margin: 0; border-radius: 0; padding-bottom: 0; box-shadow: -6px 0 24px rgba(0,0,0,.35); } #panel[data-dock] .handle { display: none; } #panel[data-dock] .card { border-radius: 0; height: 100%; } #panel .build { flex: none; padding: 4px 12px 6px; font-size: 10px; color: var(--p-muted); text-align: right; border-top: 1px solid rgba(255,255,255,.06); } #panel .status-link { color: var(--p-blue); font-size: 11px; margin-left: 4px; } #panel .guide-link { display: inline-flex; align-items: center; min-height: 36px; margin-top: 2px; color: var(--p-link); font-size: 12px; text-decoration: none; } #panel .guide-link:hover { text-decoration: underline; } #panel .notice { display: flex; align-items: center; gap: 4px; padding: 0 4px 0 12px; min-height: 44px; background: #1b2140; border-bottom: 1px solid rgba(255,255,255,.08); flex: none; } #panel .notice a { flex: 1; display: flex; align-items: center; min-height: 44px; color: #b9c6ff; font-size: 12px; font-weight: 700; text-decoration: none; } #panel .notice button { all: unset; cursor: pointer; width: 44px; height: 44px; display: grid; place-items: center; color: var(--p-muted); font-size: 13px; } #panel .notice button:focus-visible, #panel .notice a:focus-visible, #panel .guide-link:focus-visible { outline: 2px solid #fff; outline-offset: -2px; } #panel .handoff { padding: 8px 12px 4px; flex: none; } #panel .handoff-btn { width: 100%; min-height: 52px; font-size: 14px; background: transparent; border: 1px solid var(--p-link); color: var(--p-link); } #panel .handoff-btn[data-primary] { background: var(--p-blue); border-color: var(--p-blue); color: #fff; } #panel .handoff .hint { margin: 4px 0 0; font-size: 11px; color: var(--p-muted); text-align: center; }";
 const __d = {}, __c = {};
 function __r(k) { return __c[k] || (__c[k] = __d[k]()); }
 __d["generic/text.js"] = function () {
@@ -85,12 +85,14 @@ const CART_JA = /カートに入れる|カートに追加|カートへ/;
 const EN = /\b(buy|bought|purchase|purchases|check ?out|apply|applying|application|submit|sign ?in|sign ?out|sign ?up|log ?in|log ?out|logout|login|register|registration|subscribe|unsubscribe|pay|pays|payment|payments|billing|delete|remove|trash|erase|destroy|send|sending|inquiry|inquire|inquiries|enquiry|enquire|enquiries|contact|book|booking|reserve|reservation|enrol+|donate|confirm|proceed|order|orders|ordering|continue to (?:pay|checkout|order)|complete (?:order|purchase))\b/i;
 const EN_CART = /\badd to (?:cart|bag|basket|trolley)\b|\bto (?:cart|basket)\b/i;
 const EN_APPLY_FILTER = /\bapply\s+(?:filters?|changes|selection|sort|refinements?)\b/i;
+const FAV = /お気に入り|ウォッチ|いいね|キープ|[♡♥❤]|favou?rite|wish ?list|watch ?list|\blike\b/i;
 const ZW = /[\u00ad\u200b-\u200f\u2028-\u202f\u2060\ufeff]/g;
 /** @returns {string|null} reason when the label is blocked. */
-function blockedLabel(label, { allowCart = false, allow = [] } = {}) {
+function blockedLabel(label, { allowCart = false, allow = [], noFavorite = false } = {}) {
 let t = norm(String(label ?? '').replace(ZW, ''));
 if (!t) return null;
 if (allow.some((re) => re.test(t))) return null;
+if (noFavorite && FAV.test(t)) return 'favorite';
 const ja = t.replace(/\s+/g, '');
 const en = t.replace(/\bsort(?:ed|ing)?\s+(?:by\s+)?order\b/gi, ' ').replace(/\border\s+by\b/gi, ' ').replace(EN_APPLY_FILTER, ' ');
 if (JA.test(ja) || EN.test(en)) return 'denylist';
@@ -197,11 +199,12 @@ if (inc.length) return inc.sort((a, b) => area(a) - area(b))[0];
 return null;
 }
 const area = (e) => { const r = e.getBoundingClientRect(); return r.width * r.height; };
-function createEngine({ panel, doc = document, speed = 1, shield = false, persistKey = null, reducedMotion } = {}) {
+function createEngine({ panel, doc = document, speed = 1, shield = false, persistKey = null, reducedMotion, noFavorite = false } = {}) {
 const win = doc.defaultView;
 const reduce = reducedMotion ?? !!win.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const glideMs = reduce ? 60 : 260;
-let policy = { allowCart: false, allow: [] };
+let policy = { allowCart: false, allow: [], noFavorite };
+const skipRow = (el, label) => { if (eng.blocked(el) === 'favorite') { eng.logRow('SKIP', 'お気に入りは本物のサイトで（ボタンを表示）'); panel?.showHandoff?.(); } else eng.logRow('SKIP', skipLabel(label)); };
 let controller = null, t0 = 0, timerId = 0, running = false, cursorEl = null, shieldEl = null, rowLogged = false, lastTimerMs = 0;
 const store = () => { try { return win.sessionStorage; } catch { return null; } };
 function ensureCursor() {
@@ -244,15 +247,15 @@ Object.assign(d.style, { position: 'fixed', left: `${r.left + r.width / 2 - 14}p
 borderRadius: '50%', border: '2px solid #2f6bff', zIndex: '2147483645', pointerEvents: 'none', transition: 'transform .4s, opacity .4s' });
 doc.body.appendChild(d); requestAnimationFrame(() => { d.style.transform = 'scale(2.2)'; d.style.opacity = '0'; }); setTimeout(() => d.remove(), 450);
 },
-setPolicy(p) { policy = { allowCart: false, allow: [], ...p }; },
+setPolicy(p) { policy = { allowCart: false, allow: [], noFavorite, ...p }; },
 /** Safety denylist check (purchase/submit/login/...); see generic/safety.js */
 blocked(el) { return blockedElement(el, policy); },
 blockedForm(form) { return blockedForm(form, policy); },
 /** Show the cursor on a control and log a SKIP row without clicking it. */
-async skip(el, label) { if (el) await eng.glideTo(el); eng.logRow('SKIP', skipLabel(label)); },
+async skip(el, label) { if (el) await eng.glideTo(el); skipRow(el, label); },
 async settle(ms = 220) { await sleep(ms / speed, controller?.signal); },
 async click(el, label) {
-if (eng.blocked(el)) { eng.logRow('SKIP', skipLabel(label)); return false; }
+if (eng.blocked(el)) { skipRow(el, label); return false; }
 await eng.glideTo(el); eng.ripple(el);
 eng.logRow('CLICK', label);
 el.click();
@@ -261,7 +264,7 @@ return true;
 async check(el, label, want = true) {
 if (el.checked === want) return false;
 const target = el.matches?.('input') && !isVisible(el) && el.labels?.[0] ? el.labels[0] : el;
-if (eng.blocked(target)) { eng.logRow('SKIP', skipLabel(label)); return false; }
+if (eng.blocked(target)) { skipRow(target, label); return false; }
 await eng.glideTo(target); eng.ripple(target);
 eng.logRow('CLICK', label);
 target.click();
@@ -278,7 +281,7 @@ setter.call(el, opt.value);
 el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true }));
 },
 async type(el, text, label, perChar = 35) {
-if (eng.blocked(el)) { eng.logRow('SKIP', skipLabel(label)); return false; }
+if (eng.blocked(el)) { skipRow(el, label); return false; }
 await eng.glideTo(el); eng.ripple(el);
 eng.logRow('TYPE_TEXT', label);
 el.focus?.();
@@ -365,7 +368,7 @@ return { id: a.choice, confidence: a.confidence ?? null, probabilities: a.probab
 return {JEV_ENDPOINT, JEV_MODEL, KEY_STORAGE, askJev};
 };
 __d["version.js"] = function () {
-const BUILD_ID = 'build 2026-10-03 v3';
+const BUILD_ID = 'build 2026-10-03 v4';
 return {BUILD_ID};
 };
 __d["config.js"] = function () {
@@ -390,9 +393,9 @@ return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
 } catch { return null; }
 }
 /** https://suumo.jp/sp/?a=1 + prompt -> `${PROXY_BASE}/p/suumo.jp/sp/?a=1#jev-prompt=...` (null when the host is not supported). */
-function proxyUrl(u, prompt, base = PROXY_BASE) {
+function proxyUrl(u, prompt, base = PROXY_BASE, auto = false) {
 if (!isSupportedHost(u.hostname) || u.port) return null;
-return `${base}/p/${u.hostname.toLowerCase()}${u.pathname}${u.search}#jev-prompt=${encodePrompt(prompt || '')}`;
+return `${base}/p/${u.hostname.toLowerCase()}${u.pathname}${u.search}#jev-prompt=${encodePrompt(prompt || '')}${auto ? '&jev-auto=1' : ''}`;
 }
 /** Original site URL of a proxied page: /p/<host>/x?y -> https://<host>/x?y (null when not under /p/<host>/). */
 function originalUrl(loc, proxyHost) {
@@ -400,24 +403,73 @@ const pre = `/p/${proxyHost}`;
 if (!proxyHost || (loc.pathname !== pre && !loc.pathname.startsWith(pre + '/'))) return null;
 return `https://${proxyHost}${loc.pathname.slice(pre.length) || '/'}${loc.search}`;
 }
-return {PROXY_BASE, PROXY_HOSTS, isSupportedHost, UNSUPPORTED_TEXT, encodePrompt, decodePrompt, proxyUrl, originalUrl};
+/** Friendly site names for the hand-off button; falls back to the hostname. */
+const SITE_NAMES = { 'suumo.jp': 'SUUMO', 'amazon.co.jp': 'Amazon', 'amazon.com': 'Amazon', 'kakaku.com': '価格.com', 'indeed.com': 'Indeed', 'doda.jp': 'doda',
+'rikunabi.com': 'リクナビ', 'mynavi.jp': 'マイナビ', 'green-japan.com': 'Green', 'wantedly.com': 'Wantedly', 'rakuten.co.jp': '楽天市場', 'zozo.jp': 'ZOZOTOWN', 'mercari.com': 'メルカリ' };
+function siteName(host) {
+host = String(host || '').toLowerCase();
+const k = Object.keys(SITE_NAMES).find((a) => host === a || host.endsWith('.' + a));
+return k ? SITE_NAMES[k] : host;
+}
+/** Parses what a person typed ("suumo.jp/sp/" or "https://…") into an http(s) URL with a dotted host, else null. */
+function parseUserUrl(v) {
+v = String(v || '').trim(); if (!v) return null;
+try { const u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`); return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u : null; } catch { return null; }
+}
+/** The ONE 開く decision, shared by the panel and start.html: {kind:'invalid'} | {kind:'same'|'proxy', href} | {kind:'unsupported'}. */
+function resolveOpen(value, prompt, loc, base = PROXY_BASE) {
+const u = parseUserUrl(value);
+if (!u) return { kind: 'invalid' };
+if (u.origin === loc.origin) return { kind: 'same', href: u.href };
+const t = proxyUrl(u, prompt, base);
+return t ? { kind: 'proxy', href: t } : { kind: 'unsupported' };
+}
+/** The 12 start-page sites (hosts verified through the deployed proxy; every url host is inside PROXY_HOSTS, unit-tested).
+*  blocked: the site refuses the server's requests -> never proxied, opened directly. aliases are matched on NFKC-lowercased text. */
+const SITES = [
+{ id: 'suumo', name: 'SUUMO', group: '住まい', url: 'https://suumo.jp/sp/', domain: 'suumo.jp', re: /suumo|スーモ/, sample: 'SUUMOで東京の1LDK、家賃10万円以下' },
+{ id: 'amazon', name: 'Amazon', group: '買い物', url: 'https://www.amazon.co.jp/', domain: 'amazon.co.jp', re: /amazon|アマゾン/, sample: 'Amazonでワイヤレスイヤホン、評価4以上、5000円以下' },
+{ id: 'rakuten', name: '楽天市場', group: '買い物', url: 'https://www.rakuten.co.jp/', domain: 'rakuten.co.jp', re: /楽天|rakuten/, sample: '楽天市場でノートパソコン、10万円以下' },
+{ id: 'kakaku', name: '価格.com', group: '買い物', url: 'https://kakaku.com/', domain: 'kakaku.com', re: /価格\.?com|価格コム|カカクコム|kakaku/, sample: '価格.comでノートパソコン、10万円以下' },
+{ id: 'mercari', name: 'メルカリ', group: '買い物', url: 'https://jp.mercari.com/', domain: 'mercari.com', re: /メルカリ|mercari/, sample: 'メルカリでカメラ、5000円以下' },
+{ id: 'zozo', name: 'ZOZOTOWN', group: '買い物', url: 'https://zozo.jp/', domain: 'zozo.jp', re: /zozo|ゾゾ/, blocked: true },
+{ id: 'indeed', name: 'Indeed', group: '仕事', url: 'https://jp.indeed.com/', domain: 'indeed.com', re: /indeed|インディード/, blocked: true },
+{ id: 'doda', name: 'doda', group: '仕事', url: 'https://doda.jp/', domain: 'doda.jp', re: /doda|デューダ/, sample: 'dodaで東京のエンジニア、年収600万円以上' },
+{ id: 'rikunabi', name: 'リクナビNEXT', group: '仕事', url: 'https://next.rikunabi.com/', domain: 'rikunabi.com', re: /リクナビ|rikunabi/, blocked: true },
+{ id: 'mynavi', name: 'マイナビ転職', group: '仕事', url: 'https://tenshoku.mynavi.jp/', domain: 'mynavi.jp', re: /マイナビ|mynavi/, sample: 'マイナビ転職で東京の営業、年収500万円以上' },
+{ id: 'green', name: 'Green', group: '仕事', url: 'https://www.green-japan.com/', domain: 'green-japan.com', re: /green|グリーン/, sample: 'Greenで東京のエンジニア、リモート可' },
+{ id: 'wantedly', name: 'Wantedly', group: '仕事', url: 'https://www.wantedly.com/', domain: 'wantedly.com', re: /wantedly|ウォンテッドリー/, sample: 'Wantedlyでデザイナー、リモート可' },
+];
+const BLOCKED_NOTE = 'このサイトは中継できないため、そのまま開きます';
+const nfkc = (t) => String(t || '').normalize('NFKC').toLowerCase();
+const siteOfHost = (h) => SITES.find((x) => h === x.domain || h.endsWith('.' + x.domain));
+/** Start-page decision: a typed address wins, else a site name (alias). The WHOLE sentence is the prompt and auto-start is flagged.
+*  {kind:'empty'|'unknown'} | {kind:'proxy', href, site?} | {kind:'blocked', site, href: real site (never proxied)} */
+function resolveSentence(text, base = PROXY_BASE) {
+text = String(text || '').trim();
+if (!text) return { kind: 'empty' };
+const m = text.match(/https?:\/\/[^\s、。「」]+|(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s、。「」]*)?/i);
+const u = m && parseUserUrl(m[0]);
+if (u) {
+const site = siteOfHost(u.hostname.toLowerCase());
+if (site?.blocked) return { kind: 'blocked', site, href: u.href };
+const href = proxyUrl(u, text, base, true); if (href) return { kind: 'proxy', href, site };
+}
+const site = SITES.find((x) => x.re.test(nfkc(text)));
+if (!site) return { kind: 'unknown' };
+if (site.blocked) return { kind: 'blocked', site, href: site.url };
+return { kind: 'proxy', href: proxyUrl(new URL(site.url), text, base, true), site };
+}
+/** 'ios' | 'android' | 'pc' from userAgent (iPadOS reports as Macintosh + touch). */
+function detectDevice(ua, maxTouchPoints = 0) {
+ua = String(ua || '');
+if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && maxTouchPoints > 1)) return 'ios';
+if (/Android/i.test(ua)) return 'android';
+return 'pc';
+}
+return {PROXY_BASE, PROXY_HOSTS, isSupportedHost, UNSUPPORTED_TEXT, encodePrompt, decodePrompt, proxyUrl, originalUrl, SITE_NAMES, siteName, parseUserUrl, resolveOpen, SITES, BLOCKED_NOTE, resolveSentence, detectDevice};
 };
-__d["panel.js"] = function () {
-const {fmtTimer} = __r("engine.js");
-const {KEY_STORAGE} = __r("generic/jev.js");
-const {BUILD_ID} = __r("version.js");
-const {proxyUrl, originalUrl, UNSUPPORTED_TEXT} = __r("config.js");
-const PRESETS = [
-{ id: 'mamazon', label: '🛒 Mamazon：パソコンを最安で購入', page: 'mamazon.html' },
-{ id: 'suumoja', label: '🏠 SUUMOじゃ：東京1LDKを探して問い合わせ', page: 'index.html' },
-{ id: 'form', label: '📝 Personal Form：架空プロフィールで送信', page: 'form.html' },
-];
-const DEMO_SITES = [
-{ title: 'AIエージェント操作用 デモサイト一覧', page: 'sites.html' },
-{ title: 'Mamazon（架空の通販サイト）', page: 'mamazon.html' },
-{ title: 'スーモジャ（架空の不動産サイト）', page: 'index.html' },
-{ title: 'Personal Form（架空プロフィールフォーム）', page: 'form.html' },
-];
+__d["bm.js"] = function () {
 const BM_URL = 'bookmarklet.js';
 /** Percent-encodes ONLY what a javascript: URL needs (%, #, CR/LF) so it stays valid in a phone bookmark URL field. */
 function encodeBookmarklet(code) {
@@ -431,6 +483,25 @@ const r = await fetch(new URL(BM_URL, base).href);
 if (!r.ok) throw new Error(`bookmarklet.js ${r.status}`);
 return (bmCache = encodeBookmarklet(await r.text()));
 }
+return {encodeBookmarklet, bookmarkletCode};
+};
+__d["panel.js"] = function () {
+const {fmtTimer} = __r("engine.js");
+const {KEY_STORAGE} = __r("generic/jev.js");
+const {BUILD_ID} = __r("version.js");
+const {resolveOpen, originalUrl, siteName, UNSUPPORTED_TEXT} = __r("config.js");
+const {encodeBookmarklet, bookmarkletCode} = __r("bm.js");
+const PRESETS = [
+{ id: 'mamazon', label: '🛒 Mamazon：パソコンを最安で購入', page: 'mamazon.html' },
+{ id: 'suumoja', label: '🏠 SUUMOじゃ：東京1LDKを探して問い合わせ', page: 'index.html' },
+{ id: 'form', label: '📝 Personal Form：架空プロフィールで送信', page: 'form.html' },
+];
+const DEMO_SITES = [
+{ title: 'AIエージェント操作用 デモサイト一覧', page: 'sites.html' },
+{ title: 'Mamazon（架空の通販サイト）', page: 'mamazon.html' },
+{ title: 'スーモジャ（架空の不動産サイト）', page: 'index.html' },
+{ title: 'Personal Form（架空プロフィールフォーム）', page: 'form.html' },
+];
 /** Constructed stylesheets are exempt from the host page's style-src CSP (an injected <style> is not); <style> stays as fallback. */
 function applyCss(root, css) {
 try { const sh = new CSSStyleSheet(); sh.replaceSync(css); root.adoptedStyleSheets = [sh]; return; } catch { /* old browser */ }
@@ -439,6 +510,8 @@ const st = document.createElement('style'); st.textContent = css; root.appendChi
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 let memKey = '';
 const store = (fn) => { try { return fn(globalThis.localStorage); } catch { return null; } };
+/** start.html#login of the ORIGINAL app (derived from the panel script's src); '' when unusable. */
+function startUrl(appSrc) { try { return new URL('start.html#login', appSrc).href; } catch { return ''; } }
 const HTML = (o) => `
 <aside id="panel" data-layout="side" data-snap="collapsed" aria-label="Jev Ultrafast">
 <div class="chrome"><span class="jicon">J</span><span>Jev Ultrafast</span><span class="sp"></span>
@@ -450,15 +523,18 @@ const HTML = (o) => `
 <div id="sheet-handle" class="handle" role="button" aria-label="パネルの高さを変える" tabindex="0"><span></span></div>
 <header class="hd"><h2><i>⚡</i> Jev Ultrafast</h2><span id="conn-badge" data-state="connecting">接続中…</span></header>
 <div class="scroll">
+${o.mode === 'bookmarklet' && o.proxyHost && o.appSrc && startUrl(o.appSrc) ? `<div class="notice" id="login-note"><a id="login-link" href="${esc(startUrl(o.appSrc))}" target="_blank" rel="noopener">ログインが必要なページでは使えません（詳しく）</a><button type="button" id="note-x" aria-label="このお知らせを閉じる">✕</button></div>` : ''}
+${o.mode === 'bookmarklet' && o.proxyHost ? `<div class="handoff" id="handoff-box"><button type="button" class="btn handoff-btn" id="handoff">本物の${esc(siteName(o.proxyHost))}で開く</button><p class="hint">ログインして♡お気に入りに追加できます</p></div>` : ''}
 <div class="sect tabsect">
 <span class="lbl" id="tab-lbl">操作するタブ</span>
 ${o.mode === 'bookmarklet'
 ? `<div class="tabbox ro"><span class="ro-text" id="tab-ro"></span></div>`
 : `<div class="tabbox" id="tab-box"><select id="tab-select" aria-labelledby="tab-lbl"></select>
-<div class="urlrow" id="url-row" hidden><input id="tab-url" type="url" inputmode="url" placeholder="サイトのURLを入力" aria-label="操作するサイトのURL"><button type="button" class="btn small" id="tab-open">開く</button></div></div>`}
+<div class="urlrow" id="url-row" hidden><input id="tab-url" type="url" inputmode="url" placeholder="サイトのアドレスを入力" aria-label="操作するサイトのアドレス"><button type="button" class="btn small" id="tab-open">開く</button></div></div>
+<a class="guide-link" id="guide-link" href="start.html">はじめての方はこちら →</a>`}
 </div>
 <div class="sect">
-<label class="lbl" for="prompt">Jev にやって欲しいこと <small>— 下のプリセットを押すとそのページを開いて指示が入ります</small></label>
+<label class="lbl" for="prompt">やってほしいこと${o.mode === 'bookmarklet' ? '' : ' <small>— 下のプリセットを押すとそのページを開いて指示が入ります</small>'}</label>
 <textarea id="prompt" spellcheck="false"></textarea>
 <div class="presets" id="presets">${o.mode === 'bookmarklet' ? '' : PRESETS.map((p, i) => `<button type="button" class="preset" data-preset="${i + 1}">${esc(p.label)}</button>`).join('')}</div>
 </div>
@@ -470,10 +546,10 @@ ${o.mode === 'bookmarklet'
 <div class="stat"><span class="k">状態</span><span id="status" role="status" aria-live="polite" data-state="idle">待機中</span></div>
 <div id="instr" hidden></div>
 <div id="log" role="log" aria-live="polite"></div>
-<details class="settings" id="settings"><summary>Jev モード設定（任意）</summary>
+<details class="settings" id="settings"><summary>くわしい設定（任意）</summary>
 <div id="key-note">${o.mode === 'bookmarklet'
-? '曖昧な一致をJevに判定させるには、あなた自身のAI Gatewayキーを入力します。キーはこのページを閉じるまでのみ保持され、このサイトのlocalStorage・cookieなどには一切保存しません。未入力ならヒューリスティックのみで動作します。'
-: '曖昧な一致をJevに判定させるには、あなた自身のAI Gatewayキーを入力します。キーはこの端末のlocalStorageにのみ保存され、コードやサーバーには含まれません。未入力ならヒューリスティックのみで動作します。'}</div>
+? 'あいまいな一致をAIに判断させるには、あなた自身のAI Gatewayキーを入力します。キーはこのページを閉じるまでのみ保持され、このサイトのlocalStorage・cookieなどには一切保存しません。未入力ならヒューリスティックのみで動作します。'
+: 'あいまいな一致をAIに判断させるには、あなた自身のAI Gatewayキーを入力します。キーはこの端末のlocalStorageにのみ保存され、コードやサーバーには含まれません。未入力ならヒューリスティックのみで動作します。'}</div>
 <div class="keyrow"><input id="jev-key" type="password" autocomplete="off" placeholder="AI Gateway キー" aria-label="AI Gateway キー"><button type="button" class="btn small" id="jev-key-clear">消去</button></div>
 </details>
 <div class="foot" id="foot" hidden>操作は今開いているタブで行われます。実サイトでは購入・送信が本当に実行されるので注意。</div>
@@ -491,40 +567,36 @@ const panel = $('#panel');
 const el = { prompt: $('#prompt'), start: $('#btn-start'), stop: $('#btn-stop'), timer: $('#timer'), status: $('#status'), instr: $('#instr'), log: $('#log'), foot: $('#foot'), badge: $('#conn-badge') };
 const handlers = { start: [], stop: [], tab: [] };
 const api = { root, el, panel, onStart: (f) => handlers.start.push(f), onStop: (f) => handlers.stop.push(f) };
+$('#note-x')?.addEventListener('click', () => $('#login-note').remove());
 setTimeout(() => { el.badge.dataset.state = 'ok'; el.badge.textContent = 'サーバー接続OK'; }, 400);
 const loc = globalThis.location;
 if (o.mode === 'bookmarklet') {
 $('#tab-ro').textContent = `${document.title || '(無題)'} — ${(o.proxyHost && originalUrl(loc, o.proxyHost)) || loc.href}`;
 } else {
 const sel = $('#tab-select'); const cur = (loc.pathname.split('/').pop() || 'index.html');
-sel.innerHTML = DEMO_SITES.map((s) => `<option value="${s.page}">${esc(s.title)} — ${esc(loc.origin)}/${esc(s.page)}</option>`).join('') + '<option value="__url">その他のURLを入力…</option>';
+sel.innerHTML = DEMO_SITES.map((s) => `<option value="${s.page}">${esc(s.title)} — ${esc(loc.origin)}/${esc(s.page)}</option>`).join('') + '<option value="__url">その他のサイトのアドレスを入力…</option>';
 sel.value = DEMO_SITES.some((s) => s.page === cur) ? cur : 'sites.html';
 const urlRow = $('#url-row');
 const urlEl = $('#tab-url');
-const parseUrl = (v) => { v = v.trim(); if (!v) return null; try { const u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`); return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u : null; } catch { return null; } };
 const showUnsupported = () => {
 el.status.dataset.state = 'error'; el.status.textContent = UNSUPPORTED_TEXT;
-const a = document.createElement('a'); a.href = 'bookmarklet.html'; a.textContent = 'くわしい手順'; a.className = 'status-link';
+const a = document.createElement('a'); a.href = 'start.html#login'; a.textContent = 'くわしい手順'; a.className = 'status-link';
 el.status.append(' ', a);
 };
-const goExternal = (u) => {
-const t = proxyUrl(u, el.prompt.value);
-if (t) loc.href = t; else showUnsupported();
+const goExternal = (v, startOnSame) => {
+const r = resolveOpen(v, el.prompt.value, loc);
+if (r.kind === 'invalid' || (startOnSame && r.kind === 'same')) return false;
+if (r.kind === 'unsupported') showUnsupported(); else loc.href = r.href;
 return true;
 };
-const openExternal = () => {
-const u = parseUrl(urlEl.value);
-if (!u) return;
-if (u.origin === loc.origin) { loc.href = u.href; return; }
-goExternal(u);
-};
+const openExternal = () => { goExternal(urlEl.value); };
 const box = $('#tab-box');
 const showUrl = (on) => { urlRow.hidden = !on; sel.hidden = on; box.dataset.mode = on ? 'url' : 'select'; };
 const resetSel = () => { sel.value = DEMO_SITES.some((s) => s.page === cur) ? cur : 'sites.html'; };
 sel.addEventListener('change', () => { if (sel.value === '__url') showUrl(true); else { showUrl(false); if (sel.value !== cur) loc.href = sel.value; } });
 urlEl.addEventListener('keydown', (e) => { if (e.key === 'Escape') { showUrl(false); resetSel(); } else if (e.key === 'Enter') { e.preventDefault(); openExternal(); } });
 $('#tab-open').addEventListener('click', openExternal);
-api.handleExternal = () => { if (urlRow.hidden) return false; const u = parseUrl(urlEl.value); return !!u && u.origin !== loc.origin && goExternal(u); };
+api.handleExternal = () => { if (urlRow.hidden) return false; return goExternal(urlEl.value, true); };
 root.querySelectorAll('.preset').forEach((b) => b.addEventListener('click', () => {
 const p = PRESETS[Number(b.dataset.preset) - 1]; const here = cur === p.page;
 for (const f of handlers.tab) f(p, here);
@@ -559,9 +631,13 @@ api.setTimer = (ms) => { el.timer.textContent = fmtTimer(ms); };
 api.setInstr = (t) => { el.instr.hidden = !t; el.instr.textContent = t || ''; };
 api.getPrompt = () => el.prompt.value;
 api.setPrompt = (v) => { el.prompt.value = v; };
+const handoffBtn = $('#handoff');
+api.showHandoff = () => { if (handoffBtn) { handoffBtn.dataset.primary = '1'; } };
+handoffBtn?.addEventListener('click', () => { const u = originalUrl(loc, o.proxyHost); if (u) loc.href = u; });
 const TEXT = { idle: '待機中', running: '操作中…', done: '✅ 完了', stopped: '⏹ 停止しました', error: '⚠ エラー' };
 api.setState = (s) => {
 el.status.dataset.state = s; if (s !== 'error') el.status.textContent = TEXT[s];
+if (s === 'done' && handoffBtn) { if (panel.dataset.layout === 'sheet' && panel.dataset.snap === 'collapsed') setSnap('half'); el.status.textContent = `見つかりました。お気に入りに入れるときは「${handoffBtn.textContent}」を押してください`; api.showHandoff(); }
 const running = s === 'running';
 el.start.disabled = running; el.stop.disabled = !running; el.foot.hidden = !running;
 if (running && panel.dataset.layout === 'sheet') setSnap('collapsed');
@@ -602,7 +678,7 @@ api.destroy = () => { document.body.style.paddingBottom = ''; (o.mode === 'bookm
 api.setState('idle');
 return api;
 }
-return {PRESETS, DEMO_SITES, encodeBookmarklet, bookmarkletCode, mountPanel};
+return {PRESETS, DEMO_SITES, startUrl, mountPanel, encodeBookmarklet, bookmarkletCode};
 };
 __d["adapters/demo.js"] = function () {
 const {NotFoundError} = __r("engine.js");
@@ -635,7 +711,7 @@ notes,
 };
 }
 function instrText(p) {
-return `Jev への指示（英語化）: Set エリア to ${p.area}, 間取り to ${p.layout}, 賃料上限 to ${p.rent}, then click 'この条件で検索'. Click '物件の詳細を見る' on the first result, then click お気に入り on that property. Then click '空室状況を問い合わせる'. In the inquiry form, fill お名前 = ${p.name}, メールアドレス = ${p.email}, お問い合わせ内容 = ${p.body} Then do NOT click '内容を送信する（デモ）' (skipped for safety). When the inquiry form is filled in, DONE.`;
+return `自動操作の内容（英語）: Set エリア to ${p.area}, 間取り to ${p.layout}, 賃料上限 to ${p.rent}, then click 'この条件で検索'. Click '物件の詳細を見る' on the first result, then click お気に入り on that property. Then click '空室状況を問い合わせる'. In the inquiry form, fill お名前 = ${p.name}, メールアドレス = ${p.email}, お問い合わせ内容 = ${p.body} Then do NOT click '内容を送信する（デモ）' (skipped for safety). When the inquiry form is filled in, DONE.`;
 }
 const $ = (s) => document.querySelector(s);
 const need = (el, what) => { if (!el) throw new NotFoundError(what); return el; };
@@ -936,7 +1012,7 @@ const lab = (c, fallback) => shortGroup(c.group || c.label) || fallback;
 function englishize(parsed) {
 const parts = parsed.intents.map((i) => i.kind === 'num' ? `set ${i.label || 'the numeric filter'} ${i.op === 'max' ? '(max) ' : i.op === 'min' ? '(min) ' : ''}to ${i.raw}` :
 i.kind === 'sort' ? `sort by ${i.text}` : i.kind === 'pair' ? `set ${i.label} to ${i.text}` : `select or search '${i.text}'`);
-return `Jev への指示（英語化）: ${parts.length ? parts.join(', then ') : 'no recognizable filters'}. Then click the search/apply button. Never click purchase / apply / submit / login / payment controls (logged as SKIP).`;
+return `自動操作の内容（英語）: ${parts.length ? parts.join(', then ') : 'no recognizable filters'}. Then click the search/apply button. Never click purchase / apply / submit / login / payment controls (logged as SKIP).`;
 }
 async function pick(eng, intent, ctx) {
 const scan = scanControls(eng.doc);
@@ -945,7 +1021,7 @@ if (r.best && r.ambiguous && ctx.jevKey) {
 const cands = r.list.slice(0, 5).map((x, i) => ({ id: `k${i}`, description: describeControl(x.c), x }));
 const a = await askJev({ key: ctx.jevKey, url: eng.win.location.origin + eng.win.location.pathname, intent: intent.text || intent.label || intent.raw, candidates: cands, fetchFn: ctx.fetchFn });
 const chosen = a && cands.find((c) => c.id === a.id);
-if (chosen) { eng.note(`Jev判定: ${chosen.description}`); return { best: chosen.x, jev: true }; }
+if (chosen) { eng.note(`AI判断: ${chosen.description}`); return { best: chosen.x, jev: true }; }
 }
 if (r.best && r.best.score >= 0.45) return { best: r.best };
 return { best: null };
@@ -1042,7 +1118,7 @@ p.intents = p.intents.filter((i) => !(i.kind === 'term' && /^(suumo|スーモ)|�
 p.wantDetail = /詳細/.test(text); p.wantFav = /お気に入り/.test(text);
 return p;
 }
-const suumoInstr = (p) => `Jev への指示（英語化）: On suumo.jp/sp, apply the filters (${p.intents.map((i) => i.label ? `${i.label}=${i.raw || i.text}` : i.raw || i.text).join(', ')}), run the search, open the first result's detail page and tap お気に入り. Never submit any inquiry form. (UNVERIFIED recipe)`;
+const suumoInstr = (p) => `自動操作の内容（英語）: On suumo.jp/sp, apply the filters (${p.intents.map((i) => i.label ? `${i.label}=${i.raw || i.text}` : i.raw || i.text).join(', ')}), run the search, open the first result's detail page and tap お気に入り. Never submit any inquiry form. (UNVERIFIED recipe)`;
 /** Steps: generic filters + search, then recipe-specific detail / favorite. */
 function suumoSteps(p, ctx = {}) {
 ctx.hints = { ...SUUMO_HINTS, ...(ctx.hints || {}) };
@@ -1100,19 +1176,21 @@ const wordsOf = (...xs) => xs.flatMap((x) => String(x || '').split(/[\s.\-_/:|�
 function startApp(o) {
 const siteHost = o.proxyHost || location.hostname;
 const adapter = o.adapter || pickAdapter(siteHost, globalThis.JEV_ADAPTER);
-const panel = mountPanel(o.host, { mode: o.mode, css: o.css, onClose: o.onClose, dock: o.dock, proxyHost: o.proxyHost });
+const panel = mountPanel(o.host, { mode: o.mode, css: o.css, onClose: o.onClose, dock: o.dock, proxyHost: o.proxyHost, appSrc: o.appSrc });
 const hash = (location.hash.match(/preset=(\w+)/) || [])[1];
 const initial = (hash && PRESET_PROMPTS[hash]) || (hash === 'suumoja' && adapter.defaultPrompt) || adapter.defaultPrompt;
 panel.setPrompt(initial);
+let autoStart = false;
 if (o.mode === 'bookmarklet') {
-const m = /^#jev-prompt=([A-Za-z0-9_-]*)$/.exec(location.hash);
+const m = /^#jev-prompt=([A-Za-z0-9_-]*)(&jev-auto=1)?$/.exec(location.hash);
 if (m) {
+autoStart = !!m[2];
 const t = decodePrompt(m[1]); if (t) panel.setPrompt(t);
 try { history.replaceState(history.state, '', location.pathname + location.search); } catch { /* ignore */ }
 }
 }
 const persistKey = adapter.id === 'demo' ? null : `jev.pending.${siteHost}`;
-const eng = createEngine({ panel, shield: adapter.shield, persistKey });
+const eng = createEngine({ panel, shield: adapter.shield, persistKey, noFavorite: !!o.proxyHost });
 const ctx = { hints: adapter.hints || {}, get jevKey() { return panel.getKey(); }, fetchFn: (...a) => fetch(...a), site: o.ctx?.site };
 const ignore = [...wordsOf(siteHost, document.title), 'Mamazon', 'Personal', 'Form', 'SUUMO', 'SUUMOじゃ', 'スーモジャ'];
 panel.onPreset((p, here) => { if (here) { panel.setPrompt(p.id === 'suumoja' ? adapter.defaultPrompt : PRESET_PROMPTS[p.id]); } });
@@ -1130,6 +1208,7 @@ if (parsed.notes?.length) for (const n of parsed.notes) setTimeout(() => panel.l
 await eng.run(steps, { startIndex: resume && resume.idx < steps.length ? resume.idx : 0 });
 });
 panel.onStop(() => eng.stop());
+if (autoStart) setTimeout(() => panel.el.start.click(), 400);
 return { panel, eng, adapter };
 }
 return {PRESET_PROMPTS, startApp, normText};
@@ -1140,11 +1219,12 @@ const {startApp} = __r("app.js");
 const old = document.getElementById('jev-root');
 if (old) { old.remove(); return; } // second tap toggles the panel off
 const proxyHost = (document.currentScript && document.currentScript.getAttribute('data-jev-proxy-host')) || '';
+const appSrc = (document.currentScript && document.currentScript.src) || '';
 const host = document.createElement('div');
 host.id = 'jev-root';
 host.style.cssText = 'all:initial;position:fixed;z-index:2147483647;left:0;bottom:0;width:0;height:0';
 document.documentElement.appendChild(host);
-startApp({ host, mode: 'bookmarklet', css: typeof PANEL_CSS === 'string' ? PANEL_CSS : '', dock: !!globalThis.__JEV_EXT__, proxyHost, onClose: () => host.remove() });
+startApp({ host, mode: 'bookmarklet', css: typeof PANEL_CSS === 'string' ? PANEL_CSS : '', dock: !!globalThis.__JEV_EXT__, proxyHost, appSrc, onClose: () => host.remove() });
 })();
 return {};
 };

@@ -2,6 +2,11 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<script>
+// The bare app URL (".../") is the first-time entry point: send visitors to the start page.
+// The demo itself stays reachable as index.html, and links with a hash (#preset=…) are untouched.
+if (/\/$/.test(location.pathname) && !location.hash) location.replace('start.html');
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>スーモジャ × Jev Ultrafast デモ</title>
 <meta name="theme-color" content="#1f4d2b">

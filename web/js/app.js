@@ -16,20 +16,22 @@ export function startApp(o) {
   // inside the rewriting proxy the real site is o.proxyHost (location.hostname is the proxy's)
   const siteHost = o.proxyHost || location.hostname;
   const adapter = o.adapter || pickAdapter(siteHost, globalThis.JEV_ADAPTER);
-  const panel = mountPanel(o.host, { mode: o.mode, css: o.css, onClose: o.onClose, dock: o.dock, proxyHost: o.proxyHost });
+  const panel = mountPanel(o.host, { mode: o.mode, css: o.css, onClose: o.onClose, dock: o.dock, proxyHost: o.proxyHost, appSrc: o.appSrc });
   const hash = (location.hash.match(/preset=(\w+)/) || [])[1];
   const initial = (hash && PRESET_PROMPTS[hash]) || (hash === 'suumoja' && adapter.defaultPrompt) || adapter.defaultPrompt;
   panel.setPrompt(initial);
   // handed over by the app's 開く: prefill ONCE, drop the hash, never auto-start
+  let autoStart = false;
   if (o.mode === 'bookmarklet') {
-    const m = /^#jev-prompt=([A-Za-z0-9_-]*)$/.exec(location.hash);
+    const m = /^#jev-prompt=([A-Za-z0-9_-]*)(&jev-auto=1)?$/.exec(location.hash);
     if (m) {
+      autoStart = !!m[2];
       const t = decodePrompt(m[1]); if (t) panel.setPrompt(t);
       try { history.replaceState(history.state, '', location.pathname + location.search); } catch { /* ignore */ }
     }
   }
   const persistKey = adapter.id === 'demo' ? null : `jev.pending.${siteHost}`;
-  const eng = createEngine({ panel, shield: adapter.shield, persistKey });
+  const eng = createEngine({ panel, shield: adapter.shield, persistKey, noFavorite: !!o.proxyHost });
   const ctx = { hints: adapter.hints || {}, get jevKey() { return panel.getKey(); }, fetchFn: (...a) => fetch(...a), site: o.ctx?.site };
   // site-name words (e.g. 'Mamazonで…') are not search terms
 const ignore = [...wordsOf(siteHost, document.title), 'Mamazon', 'Personal', 'Form', 'SUUMO', 'SUUMOじゃ', 'スーモジャ'];
@@ -50,6 +52,8 @@ const ignore = [...wordsOf(siteHost, document.title), 'Mamazon', 'Personal', 'Fo
     await eng.run(steps, { startIndex: resume && resume.idx < steps.length ? resume.idx : 0 });
   });
   panel.onStop(() => eng.stop());
+  // once per navigation (the hash is already gone); the engine's safety denylist is unchanged
+  if (autoStart) setTimeout(() => panel.el.start.click(), 400);
   return { panel, eng, adapter };
 }
 export { normText };

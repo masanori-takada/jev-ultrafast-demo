@@ -13,11 +13,12 @@ node tests/serve.mjs          # http://127.0.0.1:4173/ （任意の静的ホス�
 node tools/build-bookmarklet.mjs   # web/bookmarklet.js と web/bookmarklet.html を生成
 npm test                      # unit + Playwright e2e + 拡張 + CSP + プロキシ（npm run test:proxy）。node:test + Playwright e2e（/opt/pw-browsers の chromium を使用）
 ```
-スマホでは「ホーム画面に追加」でPWAとして使えます。実サイトで使うには `web/bookmarklet.html`（iOS Safari / Android Chrome の手順付き）からブックマークレットを登録してください。
+スマホでは「ホーム画面に追加」でPWAとして使えます。はじめての方は `web/start.html`（サイト名とやりたいことを書いて「おまかせで探す」）。ログインして使う場合は `start.html#login` で「自動操作ボタン」（ブックマーク）を作ります（`bookmarklet.html` は古いリンク用の転送ページ）。
 
 詳細は `docs/spec.md`（9章が汎用エンジン/ブックマークレット）と `docs/plan.md`。スクリーンショットは `docs/screens/`。
 
 ## 実サイト（suumo など）で使う
 - **PC（Chrome / Edge）**: `extension/` を「パッケージ化されていない拡張機能」として読み込み（手順は `extension/README.ja.md`、`npm run build:extension` で `dist/jev-ultrafast-extension.zip` も作成）。ツールバーのボタンで右側にパネルが出ます。
-- **スマホ（プロキシ経由）**: アプリの「操作するタブ」に対応サイト（suumo.jp、amazon.co.jp など）のURLを入れて「開く」を押すと、許可リスト限定の書き換えプロキシ経由でそのサイトがJevパネル付きで開き、指示文が入った状態になります（自動では始まりません）。プロキシは `proxy/`（Vercel、Root Directory を `proxy/` に。手順は `proxy/README.ja.md`）。**実サイトでの動作は未検証**で、ログイン・POST・重いアプリ・ボット対策のサイトでは動きません。対応外のサイトはブックマークレットの手順が出ます。
-- 他サイトのページに画面を出せるのは拡張機能かブックマークレットだけです（Webページ単体では不可）。
+- **スマホ（かんたん）**: `start.html` に「SUUMOで東京の1LDK、家賃10万円以下」のように書いて「おまかせで探す」。対応サイトを自動で開き、そのまま自動操作します（購入・応募・送信・ログインは押しません）。見つけたら「本物のサイトで開く」ボタンでログイン・お気に入りへ。Indeed / ZOZOTOWN / リクナビNEXT は中継できないため、そのまま開きます。
+- **スマホ（プロキシ経由・従来）**: アプリの「操作するタブ」に対応サイト（suumo.jp、amazon.co.jp など）のURLを入れて「開く」を押すと、許可リスト限定の書き換えプロキシ経由でそのサイトがJevパネル付きで開き、指示文が入った状態になります（自動では始まりません）。プロキシは `proxy/`（Vercel、Root Directory を `proxy/` に。手順は `proxy/README.ja.md`）。**実サイトでの動作は未検証**で、ログイン・POST・重いアプリ・ボット対策のサイトでは動きません。対応外のサイトは `start.html#login` の手順が出ます。
+- 他サイトのページに画面を出せるのは拡張機能か「自動操作ボタン」（ブックマークレット）だけです（Webページ単体では不可）。

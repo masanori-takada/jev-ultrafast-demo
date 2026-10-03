@@ -24,6 +24,7 @@ export function buildExtension() {
   fs.rmSync(zip, { force: true });
   let zipped = false;
   try { execFileSync('zip', ['-q', '-r', '-X', zip, ...FILES], { cwd: OUT }); zipped = true; } catch { /* zip CLI missing: use the folder */ }
+  if (zipped) fs.copyFileSync(zip, path.join(ROOT, 'web', 'jev-ultrafast-extension.zip')); // published beside the app (start.html links it)
   return { zipped, out: OUT, zip };
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

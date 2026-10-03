@@ -2,7 +2,8 @@
 import { fmtTimer } from './engine.js';
 import { KEY_STORAGE } from './generic/jev.js';
 import { BUILD_ID } from './version.js';
-import { proxyUrl, originalUrl, UNSUPPORTED_TEXT } from './config.js';
+import { resolveOpen, originalUrl, siteName, UNSUPPORTED_TEXT } from './config.js';
+import { encodeBookmarklet, bookmarkletCode } from './bm.js';
 
 export const PRESETS = [
   { id: 'mamazon', label: '🛒 Mamazon：パソコンを最安で購入', page: 'mamazon.html' },
@@ -15,19 +16,7 @@ export const DEMO_SITES = [
   { title: 'スーモジャ（架空の不動産サイト）', page: 'index.html' },
   { title: 'Personal Form（架空プロフィールフォーム）', page: 'form.html' },
 ];
-const BM_URL = 'bookmarklet.js';
-/** Percent-encodes ONLY what a javascript: URL needs (%, #, CR/LF) so it stays valid in a phone bookmark URL field. */
-export function encodeBookmarklet(code) {
-  return 'javascript:' + String(code).replace(/%/g, '%25').replace(/#/g, '%23').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
-}
-let bmCache = null;
-/** Fetches bookmarklet.js ONCE here in the app page (same origin: no CSP/CORS issue) and returns the FULL self-contained javascript: text. */
-export async function bookmarkletCode(base) {
-  if (bmCache) return bmCache;
-  const r = await fetch(new URL(BM_URL, base).href);
-  if (!r.ok) throw new Error(`bookmarklet.js ${r.status}`);
-  return (bmCache = encodeBookmarklet(await r.text()));
-}
+export { encodeBookmarklet, bookmarkletCode };
 /** Constructed stylesheets are exempt from the host page's style-src CSP (an injected <style> is not); <style> stays as fallback. */
 function applyCss(root, css) {
   try { const sh = new CSSStyleSheet(); sh.replaceSync(css); root.adoptedStyleSheets = [sh]; return; } catch { /* old browser */ }
@@ -38,6 +27,8 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 let memKey = '';
 const store = (fn) => { try { return fn(globalThis.localStorage); } catch { return null; } };
 
+/** start.html#login of the ORIGINAL app (derived from the panel script's src); '' when unusable. */
+export function startUrl(appSrc) { try { return new URL('start.html#login', appSrc).href; } catch { return ''; } }
 const HTML = (o) => `
 <aside id="panel" data-layout="side" data-snap="collapsed" aria-label="Jev Ultrafast">
   <div class="chrome"><span class="jicon">J</span><span>Jev Ultrafast</span><span class="sp"></span>
@@ -49,15 +40,18 @@ const HTML = (o) => `
     <div id="sheet-handle" class="handle" role="button" aria-label="パネルの高さを変える" tabindex="0"><span></span></div>
     <header class="hd"><h2><i>⚡</i> Jev Ultrafast</h2><span id="conn-badge" data-state="connecting">接続中…</span></header>
     <div class="scroll">
+      ${o.mode === 'bookmarklet' && o.proxyHost && o.appSrc && startUrl(o.appSrc) ? `<div class="notice" id="login-note"><a id="login-link" href="${esc(startUrl(o.appSrc))}" target="_blank" rel="noopener">ログインが必要なページでは使えません（詳しく）</a><button type="button" id="note-x" aria-label="このお知らせを閉じる">✕</button></div>` : ''}
+      ${o.mode === 'bookmarklet' && o.proxyHost ? `<div class="handoff" id="handoff-box"><button type="button" class="btn handoff-btn" id="handoff">本物の${esc(siteName(o.proxyHost))}で開く</button><p class="hint">ログインして♡お気に入りに追加できます</p></div>` : ''}
       <div class="sect tabsect">
         <span class="lbl" id="tab-lbl">操作するタブ</span>
         ${o.mode === 'bookmarklet'
           ? `<div class="tabbox ro"><span class="ro-text" id="tab-ro"></span></div>`
           : `<div class="tabbox" id="tab-box"><select id="tab-select" aria-labelledby="tab-lbl"></select>
-               <div class="urlrow" id="url-row" hidden><input id="tab-url" type="url" inputmode="url" placeholder="サイトのURLを入力" aria-label="操作するサイトのURL"><button type="button" class="btn small" id="tab-open">開く</button></div></div>`}
+               <div class="urlrow" id="url-row" hidden><input id="tab-url" type="url" inputmode="url" placeholder="サイトのアドレスを入力" aria-label="操作するサイトのアドレス"><button type="button" class="btn small" id="tab-open">開く</button></div></div>
+             <a class="guide-link" id="guide-link" href="start.html">はじめての方はこちら →</a>`}
       </div>
       <div class="sect">
-        <label class="lbl" for="prompt">Jev にやって欲しいこと <small>— 下のプリセットを押すとそのページを開いて指示が入ります</small></label>
+        <label class="lbl" for="prompt">やってほしいこと${o.mode === 'bookmarklet' ? '' : ' <small>— 下のプリセットを押すとそのページを開いて指示が入ります</small>'}</label>
         <textarea id="prompt" spellcheck="false"></textarea>
         <div class="presets" id="presets">${o.mode === 'bookmarklet' ? '' : PRESETS.map((p, i) => `<button type="button" class="preset" data-preset="${i + 1}">${esc(p.label)}</button>`).join('')}</div>
       </div>
@@ -69,10 +63,10 @@ const HTML = (o) => `
       <div class="stat"><span class="k">状態</span><span id="status" role="status" aria-live="polite" data-state="idle">待機中</span></div>
       <div id="instr" hidden></div>
       <div id="log" role="log" aria-live="polite"></div>
-      <details class="settings" id="settings"><summary>Jev モード設定（任意）</summary>
+      <details class="settings" id="settings"><summary>くわしい設定（任意）</summary>
         <div id="key-note">${o.mode === 'bookmarklet'
-          ? '曖昧な一致をJevに判定させるには、あなた自身のAI Gatewayキーを入力します。キーはこのページを閉じるまでのみ保持され、このサイトのlocalStorage・cookieなどには一切保存しません。未入力ならヒューリスティックのみで動作します。'
-          : '曖昧な一致をJevに判定させるには、あなた自身のAI Gatewayキーを入力します。キーはこの端末のlocalStorageにのみ保存され、コードやサーバーには含まれません。未入力ならヒューリスティックのみで動作します。'}</div>
+          ? 'あいまいな一致をAIに判断させるには、あなた自身のAI Gatewayキーを入力します。キーはこのページを閉じるまでのみ保持され、このサイトのlocalStorage・cookieなどには一切保存しません。未入力ならヒューリスティックのみで動作します。'
+          : 'あいまいな一致をAIに判断させるには、あなた自身のAI Gatewayキーを入力します。キーはこの端末のlocalStorageにのみ保存され、コードやサーバーには含まれません。未入力ならヒューリスティックのみで動作します。'}</div>
         <div class="keyrow"><input id="jev-key" type="password" autocomplete="off" placeholder="AI Gateway キー" aria-label="AI Gateway キー"><button type="button" class="btn small" id="jev-key-clear">消去</button></div>
       </details>
       <div class="foot" id="foot" hidden>操作は今開いているタブで行われます。実サイトでは購入・送信が本当に実行されるので注意。</div>
@@ -92,6 +86,7 @@ export function mountPanel(host, opts = {}) {
   const handlers = { start: [], stop: [], tab: [] };
   const api = { root, el, panel, onStart: (f) => handlers.start.push(f), onStop: (f) => handlers.stop.push(f) };
 
+  $('#note-x')?.addEventListener('click', () => $('#login-note').remove());
   // connection badge: fake 400 ms "接続中…"
   setTimeout(() => { el.badge.dataset.state = 'ok'; el.badge.textContent = 'サーバー接続OK'; }, 400);
 
@@ -102,29 +97,24 @@ export function mountPanel(host, opts = {}) {
     $('#tab-ro').textContent = `${document.title || '(無題)'} — ${(o.proxyHost && originalUrl(loc, o.proxyHost)) || loc.href}`;
   } else {
     const sel = $('#tab-select'); const cur = (loc.pathname.split('/').pop() || 'index.html');
-    sel.innerHTML = DEMO_SITES.map((s) => `<option value="${s.page}">${esc(s.title)} — ${esc(loc.origin)}/${esc(s.page)}</option>`).join('') + '<option value="__url">その他のURLを入力…</option>';
+    sel.innerHTML = DEMO_SITES.map((s) => `<option value="${s.page}">${esc(s.title)} — ${esc(loc.origin)}/${esc(s.page)}</option>`).join('') + '<option value="__url">その他のサイトのアドレスを入力…</option>';
     sel.value = DEMO_SITES.some((s) => s.page === cur) ? cur : 'sites.html';
     const urlRow = $('#url-row');
     const urlEl = $('#tab-url');
-    const parseUrl = (v) => { v = v.trim(); if (!v) return null; try { const u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`); return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u : null; } catch { return null; } };
-    // status line + link to the manual (bookmarklet) steps
+    // status line + link to the Jevボタン guide
     const showUnsupported = () => {
       el.status.dataset.state = 'error'; el.status.textContent = UNSUPPORTED_TEXT;
-      const a = document.createElement('a'); a.href = 'bookmarklet.html'; a.textContent = 'くわしい手順'; a.className = 'status-link';
+      const a = document.createElement('a'); a.href = 'start.html#login'; a.textContent = 'くわしい手順'; a.className = 'status-link';
       el.status.append(' ', a);
     };
-    // external URL: supported site -> same tab to the rewriting proxy (prompt travels in the #hash); else explain. Returns true when handled.
-    const goExternal = (u) => {
-      const t = proxyUrl(u, el.prompt.value);
-      if (t) loc.href = t; else showUnsupported();
+    // same logic as start.html (config.resolveOpen): demo origin -> navigate; supported site -> same tab to the proxy (prompt in #hash); else explain
+    const goExternal = (v, startOnSame) => {
+      const r = resolveOpen(v, el.prompt.value, loc);
+      if (r.kind === 'invalid' || (startOnSame && r.kind === 'same')) return false;
+      if (r.kind === 'unsupported') showUnsupported(); else loc.href = r.href;
       return true;
     };
-    const openExternal = () => {
-      const u = parseUrl(urlEl.value);
-      if (!u) return;
-      if (u.origin === loc.origin) { loc.href = u.href; return; }
-      goExternal(u);
-    };
+    const openExternal = () => { goExternal(urlEl.value); };
     const box = $('#tab-box');
     const showUrl = (on) => { urlRow.hidden = !on; sel.hidden = on; box.dataset.mode = on ? 'url' : 'select'; };
     const resetSel = () => { sel.value = DEMO_SITES.some((s) => s.page === cur) ? cur : 'sites.html'; };
@@ -132,7 +122,7 @@ export function mountPanel(host, opts = {}) {
     urlEl.addEventListener('keydown', (e) => { if (e.key === 'Escape') { showUrl(false); resetSel(); } else if (e.key === 'Enter') { e.preventDefault(); openExternal(); } });
     $('#tab-open').addEventListener('click', openExternal);
     // a web page cannot drive another origin itself: Start on an external URL goes through the proxy (or explains)
-    api.handleExternal = () => { if (urlRow.hidden) return false; const u = parseUrl(urlEl.value); return !!u && u.origin !== loc.origin && goExternal(u); };
+    api.handleExternal = () => { if (urlRow.hidden) return false; return goExternal(urlEl.value, true); };
     // presets open the demo page and fill the prompt
     root.querySelectorAll('.preset').forEach((b) => b.addEventListener('click', () => {
       const p = PRESETS[Number(b.dataset.preset) - 1]; const here = cur === p.page;
@@ -174,9 +164,14 @@ export function mountPanel(host, opts = {}) {
   api.setInstr = (t) => { el.instr.hidden = !t; el.instr.textContent = t || ''; };
   api.getPrompt = () => el.prompt.value;
   api.setPrompt = (v) => { el.prompt.value = v; };
+  // proxy mode: hand off to the REAL site (same tab) at the page the run ended on; logins never go through the proxy
+  const handoffBtn = $('#handoff');
+  api.showHandoff = () => { if (handoffBtn) { handoffBtn.dataset.primary = '1'; } };
+  handoffBtn?.addEventListener('click', () => { const u = originalUrl(loc, o.proxyHost); if (u) loc.href = u; });
   const TEXT = { idle: '待機中', running: '操作中…', done: '✅ 完了', stopped: '⏹ 停止しました', error: '⚠ エラー' };
   api.setState = (s) => {
     el.status.dataset.state = s; if (s !== 'error') el.status.textContent = TEXT[s];
+    if (s === 'done' && handoffBtn) { if (panel.dataset.layout === 'sheet' && panel.dataset.snap === 'collapsed') setSnap('half'); el.status.textContent = `見つかりました。お気に入りに入れるときは「${handoffBtn.textContent}」を押してください`; api.showHandoff(); }
     const running = s === 'running';
     el.start.disabled = running; el.stop.disabled = !running; el.foot.hidden = !running;
     if (running && panel.dataset.layout === 'sheet') setSnap('collapsed');

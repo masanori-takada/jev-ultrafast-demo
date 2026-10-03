@@ -67,9 +67,26 @@ try {
   await page.locator('#btn-start').click();
   await page.waitForFunction(() => /完了|停止|エラー/.test(document.getElementById('jev-root').shadowRoot.querySelector('#status').textContent), null, { timeout: 30000 }).catch(() => {});
   eq(await page.evaluate(() => [area.value, layout.value, rent.value, window.__clicked]), ['東京都', '1LDK', '10万円', undefined], 'generic run set the filters on the proxied page');
-  ok((await txt('#status')).includes('完了'), 'run finished: ' + (await txt('#status')));
+  ok((await txt('#status')).includes('見つかりました。お気に入りに入れるときは「本物のtestsite.localで開く」を押してください'), 'run finished + hand-off message: ' + (await txt('#status')));
+  eq(await page.locator('#handoff').getAttribute('data-primary'), '1', 'hand-off emphasised after the run');
+  eq(await page.locator('#handoff').textContent(), '本物のtestsite.localで開く', 'hand-off label');
+  ok((await txt('#login-note')).includes('ログインが必要なページでは使えません（詳しく）'), 'proxy notice text');
+  eq(await page.evaluate(() => document.getElementById('jev-root').shadowRoot.querySelector('#login-link').getAttribute('href')), 'http://127.0.0.1:4181/start.html#login', 'notice links to ORIGINAL app start.html#login');
   ok(errors.length === 0, 'no console errors ' + errors.join('|'));
   eq(external, [], 'no non-local requests');
+  {
+    // #jev-auto=1: starts ONCE on arrival (hash removed), then the hand-off opens the REAL site at the page we are on
+    const p2 = await ctx.newPage();
+    await ctx.route('https://testsite.local/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<title>real site stub</title>' }));
+    await p2.goto(`${PX}/p/testsite.local/realestate.html?x=1#jev-prompt=${encodePrompt(typed)}&jev-auto=1`);
+    await p2.waitForSelector('#jev-root', { state: 'attached' });
+    await p2.waitForFunction(() => /見つかりました/.test(document.getElementById('jev-root').shadowRoot.querySelector('#status').textContent), null, { timeout: 30000 });
+    eq(await p2.evaluate(() => [area.value, layout.value, rent.value]), ['東京都', '1LDK', '10万円'], 'auto-start ran the filters');
+    eq(await p2.evaluate(() => location.hash), '', 'auto hash removed (no second run on reload)');
+    await p2.locator('#handoff').click(); await p2.waitForURL('https://testsite.local/realestate.html?x=1');
+    ok(true, 'hand-off opened the decoded ORIGINAL url in the same tab');
+    await p2.close();
+  }
   // off-list host is refused with the friendly page
   await page.goto(`${PX}/p/evil.example/`); ok((await page.textContent('body')).includes('まだ対応していません'), 'off-list host: friendly 403 page');
   await ctx.close();

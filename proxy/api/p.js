@@ -20,7 +20,7 @@ const allowed = (h) => {
 };
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const page = (title, msg, extra) => `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title></head>
-<body style="font:16px/1.7 system-ui,sans-serif;max-width:640px;margin:24px auto;padding:0 16px"><h1 style="font-size:20px">${esc(title)}</h1><p>${esc(msg)}</p>${extra || ''}<p style="font-size:13px;color:#666">Jev Ultrafast プロキシ</p></body></html>`;
+<body style="font:16px/1.7 system-ui,sans-serif;max-width:640px;margin:24px auto;padding:0 16px"><h1 style="font-size:20px">${esc(title)}</h1><p>${esc(msg)}</p>${extra || ''}<p style="font-size:13px;color:#666">自動操作の中継ページ</p></body></html>`;
 const sites = () => `<p>対応サイト:</p><ul>${ALLOW.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>`;
 const SKIP = /^(#|data:|javascript:|mailto:|tel:|blob:|about:)/i;
 
@@ -83,14 +83,14 @@ module.exports = async (req, res) => {
     res.end(req.method === 'HEAD' ? undefined : buf);
   };
   const err = (code, title, msg, extra) => send(code, 'text/html; charset=utf-8', page(title, msg, extra));
-  if (req.method !== 'GET' && req.method !== 'HEAD') return send(405, 'text/html; charset=utf-8', page('対応していない操作です', 'このプロキシは表示（GET）のみ対応です。'), { allow: 'GET, HEAD' });
+  if (req.method !== 'GET' && req.method !== 'HEAD') return send(405, 'text/html; charset=utf-8', page('対応していない操作です', 'この中継ページは表示のみ対応です。'), { allow: 'GET, HEAD' });
 
   const rest = new URLSearchParams(); let host, path;
   for (const [k, v] of new URL(req.url, 'http://x').searchParams) {
     if (k === 'host' && host === undefined) host = v; else if (k === 'path' && path === undefined) path = v; else rest.append(k, v);
   }
   host = String(host || '').toLowerCase().replace(/:443$/, '');
-  if (!allowed(host)) return err(403, 'このサイトはまだ対応していません', 'セキュリティのため、許可リストにあるサイトだけを表示できます。', sites());
+  if (!allowed(host)) return err(403, 'このサイトはまだ対応していません', '安全のため、対応しているサイトだけを表示できます。', sites());
   const target = new URL(`https://${host}`);
   target.pathname = '/' + (path || ''); target.search = rest.toString();
   const test = env('JEV_PROXY_TEST_UPSTREAM');
@@ -106,11 +106,11 @@ module.exports = async (req, res) => {
   }
   if (r.status >= 300 && r.status < 400 && r.headers.get('location')) {
     const to = px(r.headers.get('location'), target.href);
-    if (to == null) return err(403, 'リダイレクト先は未対応です', '移動先が許可リストにないサイトのため、表示しません。', sites());
+    if (to == null) return err(403, 'リダイレクト先は未対応です', '移動先が対応していないサイトのため、表示しません。', sites());
     return send(r.status, 'text/plain; charset=utf-8', '', { location: to });
   }
   if (r.status === 403 || r.status === 429 || r.status >= 500) {
-    return err(502, 'サイトに拒否されました', `サイトが応答コード ${r.status} を返しました。サーバー（データセンター）からのアクセス制限・ボット対策の可能性があります。ブックマークレットか拡張機能を使ってください。`);
+    return err(502, 'サイトに拒否されました', `サイトが応答コード ${r.status} を返しました。サーバー（データセンター）からのアクセス制限・ボット対策の可能性があります。自動操作ボタンか拡張機能を使ってください。`);
   }
   const type = r.headers.get('content-type') || 'application/octet-stream';
   const fwd = {};
@@ -126,7 +126,7 @@ module.exports = async (req, res) => {
   if (isCss) return send(r.status, 'text/css; charset=utf-8', cssRw(text, target.href), fwd);
   const title = (/<title[^>]*>([\s\S]*?)<\/title>/i.exec(text) || [])[1] || '';
   if (/Robot Check|Just a moment|Access Denied|Attention Required|Pardon Our Interruption|ロボットではありません/i.test(title)) {
-    return err(502, 'ボット対策で止められました', 'サイトが自動アクセスを確認する画面を返しました。このプロキシでは先に進めません。ブックマークレットか拡張機能を使ってください。');
+    return err(502, 'ボット対策で止められました', 'サイトが自動アクセスを確認する画面を返しました。自動操作ボタンか拡張機能を使ってください。');
   }
   return send(r.status, 'text/html; charset=utf-8', htmlRw(text, host, target.href), fwd);
 };

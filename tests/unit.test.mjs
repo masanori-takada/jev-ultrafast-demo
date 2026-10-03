@@ -198,7 +198,7 @@ test('sw.js cache name equals the build id (version.js) and is shown in the pane
   assert.ok(/cache: 'no-cache'/.test(sw) && /clients\.claim/.test(sw) && /skipWaiting/.test(sw));
 });
 
-import { PROXY_HOSTS, isSupportedHost, proxyUrl, originalUrl, encodePrompt, decodePrompt, UNSUPPORTED_TEXT } from '../web/js/config.js';
+import { SITES, BLOCKED_NOTE, siteName, resolveSentence, detectDevice, PROXY_HOSTS, isSupportedHost, proxyUrl, originalUrl, encodePrompt, decodePrompt, UNSUPPORTED_TEXT } from '../web/js/config.js';
 test('config: prompt base64url round-trips (UTF-8), proxyUrl and originalUrl', () => {
   for (const t of ['', 'a', '東京 1LDK 10万円以下 ✓ 😀', '??>>~~']) { const e = encodePrompt(t); assert.match(e, /^[A-Za-z0-9_-]*$/); assert.equal(decodePrompt(e), t); }
   assert.equal(proxyUrl(new URL('https://suumo.jp/sp/x?a=1#z'), 'hi', 'https://p.test'), 'https://p.test/p/suumo.jp/sp/x?a=1#jev-prompt=' + encodePrompt('hi'));
@@ -210,4 +210,47 @@ test('config: prompt base64url round-trips (UTF-8), proxyUrl and originalUrl', (
   assert.equal(originalUrl({ pathname: '/other', search: '' }, 'suumo.jp'), null);
   assert.equal(PROXY_HOSTS.length, 14);
   assert.equal(UNSUPPORTED_TEXT, 'このサイトはまだ対応していません（対応: suumo.jp, amazon.co.jp …）');
+});
+
+test('start page logic: 12 sites, aliases, blocked handling, sentence -> proxy url with auto flag, device detection', () => {
+  assert.equal(SITES.length, 12);
+  for (const x of SITES) { assert.ok(isSupportedHost(new URL(x.url).hostname), `${x.url} host is inside the proxy allowlist`); assert.ok(x.url.startsWith('https://')); assert.ok(x.blocked || x.sample); }
+  assert.deepEqual(SITES.filter((x) => x.blocked).map((x) => x.name), ['ZOZOTOWN', 'Indeed', 'リクナビNEXT']);
+  const r = resolveSentence('SUUMOで東京の1LDK、家賃10万円以下', 'https://p.test');
+  assert.equal(r.kind, 'proxy');
+  assert.equal(r.href, 'https://p.test/p/suumo.jp/sp/#jev-prompt=' + encodePrompt('SUUMOで東京の1LDK、家賃10万円以下') + '&jev-auto=1');
+  const cases = [['SUUMOで探す', 'suumo'], ['スーモで探す', 'suumo'], ['ＳＵＵＭＯで探す', 'suumo'], ['amazonでPC', 'amazon'], ['アマゾンでPC', 'amazon'], ['AMAZONでPC', 'amazon'],
+    ['Indeedで営業', 'indeed'], ['ＩＮＤＥＥＤで営業', 'indeed'], ['dodaで営業', 'doda'], ['デューダで営業', 'doda'], ['リクナビで営業', 'rikunabi'], ['リクナビNEXTで営業', 'rikunabi'],
+    ['マイナビ転職で営業', 'mynavi'], ['Greenで開発', 'green'], ['グリーンで開発', 'green'], ['Wantedlyで開発', 'wantedly'], ['ウォンテッドリーで開発', 'wantedly'],
+    ['価格.comでPC', 'kakaku'], ['価格コムでPC', 'kakaku'], ['カカクコムでPC', 'kakaku'], ['楽天でお水', 'rakuten'], ['楽天市場でお水', 'rakuten'], ['ZOZOでシャツ', 'zozo'], ['ゾゾでシャツ', 'zozo'], ['メルカリでカメラ', 'mercari']];
+  for (const [t, id] of cases) { const x = resolveSentence(t, 'https://p.test'); assert.equal(x.site?.id, id, t); }
+  for (const x of SITES.filter((y) => !y.blocked)) { const q = resolveSentence(x.sample, 'https://p.test'); assert.equal(q.kind, 'proxy', x.name); assert.equal(q.site.id, x.id, x.name + ' sample detects itself'); assert.equal(new URL(q.href.split('#')[0]).hostname, 'p.test'); assert.ok(q.href.includes(new URL(x.url).hostname), x.name); }
+  for (const t of ['Indeedで営業', 'ZOZOでシャツ', 'リクナビで営業']) { const b = resolveSentence(t, 'https://p.test'); assert.equal(b.kind, 'blocked', t); assert.ok(!b.href.includes('p.test') && !b.href.includes('jev-auto'), 'blocked is never proxied'); }
+  assert.equal(resolveSentence('Indeedで営業').href, 'https://jp.indeed.com/');
+  assert.deepEqual([resolveSentence('https://zozo.jp/shop/x でシャツ').kind, resolveSentence('https://zozo.jp/shop/x でシャツ').href], ['blocked', 'https://zozo.jp/shop/x']);
+  assert.equal(resolveSentence('https://next.rikunabi.com/ で').kind, 'blocked');
+  assert.ok(BLOCKED_NOTE.includes('そのまま開きます'));
+  const t = resolveSentence('https://kakaku.com/pc/ でノートPC', 'https://p.test'); assert.match(t.href, /^https:\/\/p\.test\/p\/kakaku\.com\/pc\/#jev-prompt=/);
+  assert.deepEqual(resolveSentence('あしたの天気'), { kind: 'unknown' }); assert.deepEqual(resolveSentence('  '), { kind: 'empty' });
+  assert.deepEqual(resolveSentence('evil.example.com でなにか'), { kind: 'unknown' });
+  assert.equal(detectDevice('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)'), 'ios');
+  assert.equal(detectDevice('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 5), 'ios'); assert.equal(detectDevice('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 0), 'pc');
+  assert.equal(detectDevice('Mozilla/5.0 (Linux; Android 14; Pixel 8)'), 'android'); assert.equal(detectDevice('Mozilla/5.0 (X11; Linux x86_64)'), 'pc');
+});
+test('hand-off: originalUrl decoding (query, Japanese path) and site names', () => {
+  assert.equal(originalUrl({ pathname: '/p/suumo.jp/chintai/jnc_001/', search: '?bc=1&ar=030' }, 'suumo.jp'), 'https://suumo.jp/chintai/jnc_001/?bc=1&ar=030');
+  assert.equal(originalUrl({ pathname: '/p/kakaku.com/search_results/%E3%83%8E%E3%83%BC%E3%83%88/', search: '?q=%E3%83%8E' }, 'kakaku.com'), 'https://kakaku.com/search_results/%E3%83%8E%E3%83%BC%E3%83%88/?q=%E3%83%8E');
+  assert.equal(originalUrl({ pathname: '/p/suumo.jp/物件/東京', search: '' }, 'suumo.jp'), 'https://suumo.jp/物件/東京');
+  assert.equal(siteName('www.suumo.jp'), 'SUUMO'); assert.equal(siteName('kakaku.com'), '価格.com'); assert.equal(siteName('testsite.local'), 'testsite.local');
+});
+test('safety: noFavorite blocks favorite-like labels only in proxy mode', async () => {
+  const { blockedLabel } = await import('../web/js/generic/safety.js');
+  for (const l of ['♡ お気に入りに追加', 'ウォッチリストに追加', 'Add to wishlist', 'いいね']) { assert.equal(blockedLabel(l, { noFavorite: true }), 'favorite', l); assert.equal(blockedLabel(l, {}), null, l); }
+  assert.equal(blockedLabel('この条件で検索', { noFavorite: true }), null);
+});
+test('sw.js caches start.html and its assets; manifest opens start.html', () => {
+  const sw = fs.readFileSync(new URL('../web/sw.js', import.meta.url), 'utf8');
+  for (const f of ['start.html', 'css/start.css', 'js/start.js', 'js/bm.js']) assert.ok(sw.includes(`'${f}'`), f);
+  for (const m of sw.matchAll(/'((?:[\w-]+\/)*[\w-]+\.(?:html|js|css|svg|png|webmanifest))'/g)) assert.ok(fs.existsSync(new URL('../web/' + m[1], import.meta.url)), m[1]);
+  assert.equal(JSON.parse(fs.readFileSync(new URL('../web/manifest.webmanifest', import.meta.url), 'utf8')).start_url, 'start.html');
 });

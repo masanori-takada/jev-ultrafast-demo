@@ -141,7 +141,7 @@ for (const proj of PROJECTS) {
     section('[mobile] layout');
     for (const [w, h] of [[390, 844], [320, 640]]) {
       const { ctx, page } = await newPage({ opts: { ...proj.opts, viewport: { width: w, height: h } } });
-      for (const f of ['index.html', 'mamazon.html', 'form.html', 'sites.html', 'bookmarklet.html']) {
+      for (const f of ['index.html', 'mamazon.html', 'form.html', 'sites.html', 'bookmarklet.html', 'start.html']) {
         await page.goto(`${BASE}/${f}`); await page.waitForTimeout(500);
         const sw = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
         ok(sw[0] <= sw[1], `no horizontal scroll ${f} @${w}: ${sw}`);
@@ -178,6 +178,29 @@ for (const proj of PROJECTS) {
   if (want('generic')) {
     section(`[${proj.name}] generic engine on fixture sites (bookmarklet bundle)`);
     const load = async (f) => { const x = await newPage(proj); await x.page.goto(`${BASE}/__fixtures__/${f}`); await x.page.addScriptTag({ content: BUNDLE }); await x.page.waitForSelector('#panel', { state: 'attached' }); return x; };
+    {
+      // favorites: skipped in proxy mode (would only save on the proxy origin) + hand-off button; still clicked outside proxy mode
+      for (const proxy of [true, false]) {
+        const { ctx, page } = await newPage(proj);
+        await page.addInitScript(() => { window.JEV_ADAPTER = 'suumo-sp'; });
+        await page.goto(`${BASE}/__fixtures__/realestate.html`);
+        await page.evaluate(() => { const b = document.createElement('button'); b.type = 'button'; b.id = 'favx'; b.textContent = '♡ お気に入りに追加'; b.onclick = () => { window.__fav = 1; }; document.body.appendChild(b); });
+        await page.evaluate(([src, px]) => { const sc = document.createElement('script'); if (px) sc.setAttribute('data-jev-proxy-host', 'suumo.jp'); sc.textContent = src; document.body.appendChild(sc); }, [BUNDLE, proxy]);
+        await page.waitForSelector('#panel', { state: 'attached' });
+        eq(await page.locator('#handoff').count(), proxy ? 1 : 0, `hand-off button only in proxy mode (proxy=${proxy})`);
+        await runWith(page, 'お気に入りを押す');
+        const rr = await page.evaluate(() => [...document.getElementById('jev-root').shadowRoot.querySelectorAll('#log .row')].map((r) => r.textContent));
+        if (proxy) {
+          eq(await page.evaluate(() => window.__fav), undefined, 'proxy mode: favorite NOT clicked');
+          ok(rr.some((t) => t.includes('お気に入りは本物のサイトで（ボタンを表示）')), 'proxy mode: favorite skip row logged: ' + rr.join('|'));
+          eq(await page.locator('#handoff').getAttribute('data-primary'), '1', 'hand-off emphasised after skip');
+          ok((await page.locator('#handoff').textContent()) === '本物のSUUMOで開く', 'hand-off label uses site name');
+        } else {
+          eq(await page.evaluate(() => window.__fav), 1, 'outside proxy mode: favorite still clicked');
+        }
+        await ctx.close();
+      }
+    }
     {
       // iOS-safe fallback: with CSSStyleSheet/adoptedStyleSheets absent the panel must still be styled via <style>
       const x = await newPage(proj);
@@ -290,9 +313,10 @@ for (const proj of PROJECTS) {
       // 'その他のURLを入力…' shows ONLY the URL row; prompt follows right below; external URL -> status line only
       const { ctx, page, errors } = await newPage(proj);
       await page.goto(`${BASE}/sites.html`); await openPanel(page);
+      { const vis = await page.evaluate(() => { const c = document.getElementById('panel').cloneNode(true); c.querySelectorAll('.chrome,header.hd').forEach((n) => n.remove()); return c.textContent; }); ok(!/Jev|Ultrafast|プロキシ|ブックマークレット|CSP|URL|ハッシュ|エンジン|セレクタ/.test(vis), 'panel text has no banned words: ' + vis.match(/Jev|Ultrafast|プロキシ|ブックマークレット|CSP|URL|ハッシュ|エンジン|セレクタ/)); }
       ok(/\bbuild \d{4}-\d{2}-\d{2} v\d+/.test(await page.locator('#build-id').textContent()) && await page.locator('#build-id').isVisible(), 'build id visible');
       await page.locator('#tab-select').selectOption('__url');
-      eq(await page.locator('#tab-url').getAttribute('placeholder'), 'サイトのURLを入力', 'url placeholder');
+      eq(await page.locator('#tab-url').getAttribute('placeholder'), 'サイトのアドレスを入力', 'url placeholder');
       ok(await page.locator('#url-row').isVisible() && await page.locator('#tab-open').isVisible(), 'URL row + 開く visible');
       eq(await page.locator('#bm-copy, #tab-note, #bm-open, .bm-steps').count(), 0, 'no external-flow elements exist');
       const gap = async () => { const r = await page.locator('#url-row').boundingBox(), t = await page.locator('#prompt').boundingBox(); return { r, t, d: t.y - (r.y + r.height) }; };
@@ -316,7 +340,9 @@ for (const proj of PROJECTS) {
       await page.locator('#btn-start').click();
       const st = await page.locator('#status').textContent();
       ok(st.includes('このサイトはまだ対応していません（対応: suumo.jp, amazon.co.jp …）') && st.includes('くわしい手順'), 'unsupported external URL shows status + link ' + st);
-      eq(await page.locator('#status a[href="bookmarklet.html"]').count(), 1, 'status links to bookmarklet.html');
+      eq(await page.locator('#status a[href="start.html#login"]').count(), 1, 'status links to start.html#login');
+      eq(await page.locator('#guide-link').getAttribute('href'), 'start.html', 'panel has the はじめての方はこちら link');
+      ok((await page.locator('#guide-link').textContent()).includes('はじめての方はこちら'), 'guide link text');
       eq(await page.locator('#btn-start').isDisabled(), false, 'start not running');
       eq(page.url().includes('example.org'), false, 'did not navigate');
       await page.locator('#tab-open').click();
@@ -347,19 +373,76 @@ for (const proj of PROJECTS) {
       await page.evaluate(async () => { for (const k of await caches.keys()) { const c = await caches.open(k); await c.put(new Request(new URL('js/panel.js', location.href).href), new Response('/*stale*/export const PRESETS=[];', { headers: { 'content-type': 'text/javascript' } })); } await caches.open('jev-demo-v3'); });
       await page.reload(); await page.waitForSelector('#panel'); await openPanel(page);
       await page.locator('#tab-select').selectOption('__url');
-      ok(await page.locator('#url-row').isVisible() && (await page.locator('#tab-url').getAttribute('placeholder')) === 'サイトのURLを入力', 'stale cached panel.js is bypassed (network-first)');
+      ok(await page.locator('#url-row').isVisible() && (await page.locator('#tab-url').getAttribute('placeholder')) === 'サイトのアドレスを入力', 'stale cached panel.js is bypassed (network-first)');
       eq(await page.evaluate(() => caches.keys()).then((k) => k.length), 2, 'seeded old cache exists until next activation');
       await ctx.close();
     }
     {
-      const { ctx, page } = await newPage(proj);
-      await page.goto(`${BASE}/bookmarklet.html`);
-      const href = await page.locator('#bm').getAttribute('href');
-      ok(href.startsWith('javascript:') && href.length > 20000, 'bookmarklet link inlined code');
+      // start.html: one sentence -> proxy with auto flag; device tab by UA; copy; samples; old bookmarklet.html forwards
+      const UAS = { ios: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1', android: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/120.0 Mobile Safari/537.36', pc: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36' };
+      for (const [dev, ua] of Object.entries(UAS)) {
+        const c = await browser.newContext({ ...proj.opts, userAgent: ua }); const page = await c.newPage();
+        await page.goto(`${BASE}/start.html#login`);
+        eq(await page.locator('.tab[aria-selected=true]').getAttribute('data-device'), dev, `device tab auto-selected for ${dev}`);
+        eq(await page.locator('.devpanel:not([hidden])').count(), 1, 'one device panel visible');
+        await c.close();
+      }
+      const { ctx, page, errors } = await newPage(proj);
+      await page.goto(`${BASE}/start.html`);
+      ok(await page.locator('#go').isVisible() && (await page.locator('#go').textContent()) === 'おまかせで探す', 'big button visible on first screen');
+      ok((await page.locator('#go').boundingBox()).height >= 48 && await page.locator('#login').isHidden(), 'button >=48 tall; guide hidden on first screen');
+      eq(await page.locator('#go-form input:not([type=hidden]), #go-form textarea').count(), 1, 'exactly one text box');
+      const sw = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]); ok(sw[0] <= sw[1], 'start: no horizontal scroll ' + sw);
+      await page.locator('#go').click();
+      ok((await page.locator('#go-msg').textContent()).length > 0, 'empty -> friendly line');
+      await page.locator('#ask').fill('あしたの天気を教えて'); await page.locator('#go').click();
+      eq(await page.locator('#go-msg').textContent(), 'どのサイトか分かりませんでした。サイト名（例: SUUMO）を入れてください。', 'unknown site message');
+      ok(!page.url().includes('vercel'), 'did not navigate');
+      eq(await page.locator('.site').count(), 12, '12 site buttons');
+      for (const b of await page.locator('.site').all()) ok((await b.boundingBox()).height >= 48, 'site button >=48 tall');
+      const swg = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]); ok(swg[0] <= swg[1], 'site grid: no horizontal scroll ' + swg);
+      ok(!/Jev/.test(await page.locator('#sites').innerText()), 'no Jev in the grid');
+      eq(await page.locator('.site.blocked small').allTextContents(), ['自動操作は使えません', '自動操作は使えません', '自動操作は使えません'], 'blocked sites tagged');
+      for (const b of await page.locator('.site:not(.blocked)').all()) { await b.click(); ok((await page.locator('#ask').inputValue()).length > 5, 'ok site button fills the box'); }
+      await page.locator('.site[data-id=suumo]').click();
+      eq(await page.locator('#ask').inputValue(), 'SUUMOで東京の1LDK、家賃10万円以下', 'SUUMO button fills the sample sentence');
+      eq(await page.locator('.site[data-id=indeed]').getAttribute('href'), 'https://jp.indeed.com/', 'blocked site links straight to the real site');
+      eq(await page.locator('.site[data-id=indeed]').getAttribute('target'), '_blank', 'blocked site opens in a new tab');
+      await page.locator('.site[data-id=indeed]').evaluate((a) => a.addEventListener('click', (e) => e.preventDefault())); await page.locator('.site[data-id=indeed]').click();
+      ok((await page.locator('#go-msg').textContent()).includes('このサイトは中継できないため、そのまま開きます'), 'blocked tap shows the note');
+      await page.locator('#ask').fill('Indeedでエンジニア'); await page.locator('#go').click();
+      ok((await page.locator('#go-msg').textContent()).includes('そのまま開きます') && (await page.locator('#go-msg a.open-real').getAttribute('href')) === 'https://jp.indeed.com/' && !page.url().includes('vercel'), 'blocked sentence: note + サイトを開く, no proxy');
+      await page.locator('.site[data-id=suumo]').click();
+      await page.route('https://jev-ultrafast-demo.vercel.app/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<title>proxy stub</title>' }));
+      await page.locator('#go').click(); await page.waitForURL(/vercel\.app/);
+      const u = new URL(page.url());
+      eq([u.pathname, u.hash.endsWith('&jev-auto=1')], ['/p/suumo.jp/sp/', true], '開く: proxy path + auto flag');
+      eq(Buffer.from(u.hash.slice('#jev-prompt='.length).split('&')[0].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'), 'SUUMOで東京の1LDK、家賃10万円以下', 'whole sentence is the prompt');
+      await page.goBack(); await page.waitForSelector('#ask');
+      await page.locator('#ask').fill('amazon.co.jp/s?k=pc でパソコンを探す'); await page.locator('#go').click(); await page.waitForURL(/vercel\.app/);
+      eq([new URL(page.url()).pathname, new URL(page.url()).search], ['/p/amazon.co.jp/s', '?k=pc'], 'typed URL in the sentence works');
+      await page.goto(`${BASE}/start.html`);
+      await page.locator('a#to-login').click(); await page.waitForSelector('#login', { state: 'visible' });
+      ok(await page.locator('#first').isHidden(), 'login guide replaces first screen');
+      for (const b of await page.locator('.tab').all()) ok((await b.boundingBox()).height >= 48, 'tab >=48 tall');
       await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE }).catch(() => {});
-      await page.locator('#copy').click(); await page.waitForTimeout(200);
-      ok((await page.locator('#copied').textContent()).includes('コピー'), 'copy button feedback');
-      ok(/iPhone/.test(await page.locator('body').textContent()) && /Android/.test(await page.locator('body').textContent()), 'iOS + Android steps present');
+      await page.locator('.tab[data-device=android]').click();
+      await page.locator('#panel-android .js-copy').click(); await page.waitForTimeout(300);
+      ok((await page.locator('#panel-android .copied').textContent()).includes('コピーしました'), 'copy shows ✅ コピーしました');
+      const clip = await page.evaluate(() => navigator.clipboard.readText()).catch(() => null);
+      const bundle = fs.readFileSync(path.join(ROOT, 'web/bookmarklet.js'), 'utf8');
+      ok(clip && clip.startsWith('javascript:') && decodeURIComponent(clip.slice(11)) === bundle, 'clipboard javascript: text decodes to web/bookmarklet.js');
+      await page.locator('.tab[data-device=pc]').click();
+      eq(await page.locator('#ext-zip').getAttribute('href'), 'jev-ultrafast-extension.zip', 'zip link relative');
+      eq((await ctx.request.get(`${BASE}/jev-ultrafast-extension.zip`)).status(), 200, 'zip is published beside the app');
+      const sw2 = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]); ok(sw2[0] <= sw2[1], 'guide: no horizontal scroll ' + sw2);
+      await page.goto(`${BASE}/bookmarklet.html`); await page.waitForURL(/start\.html#login/);
+      ok(!/ブックマークレット/.test(await page.locator('body').innerText()), 'no ブックマークレット jargon on start.html');
+      const BAN = /Jev|Ultrafast|プロキシ|ブックマークレット|CSP|URL|ハッシュ|エンジン|セレクタ/;
+      await page.goto(`${BASE}/start.html`); const first = await page.evaluate(() => document.getElementById('first').innerText);
+      await page.goto(`${BASE}/start.html#login`); const guide = await page.evaluate(() => { const c = document.getElementById('login').cloneNode(true); c.querySelectorAll('.pm-h').forEach((n) => n.remove()); return c.textContent; });
+      ok(!BAN.test(first) && !BAN.test(guide), 'start.html shows no banned words: ' + (first + guide).match(BAN));
+      ok(errors.length === 0, 'start console clean ' + errors);
       await ctx.close();
     }
   }
@@ -373,7 +456,7 @@ for (const proj of PROJECTS) {
     await page.evaluate(() => navigator.serviceWorker.ready); await page.reload(); await page.waitForSelector('#results .card');
     ok(await page.evaluate(() => !!navigator.serviceWorker.controller), 'SW controls page after reload');
     const man = await (await ctx.request.get(`${BASE}/manifest.webmanifest`)).json();
-    eq([man.display, man.lang, man.start_url], ['standalone', 'ja', './'], 'manifest basics');
+    eq([man.display, man.lang, man.start_url], ['standalone', 'ja', 'start.html'], 'manifest basics');
     for (const i of man.icons) ok((await ctx.request.get(`${BASE}/${i.src}`)).status() === 200, `icon ${i.src}`);
     await ctx.setOffline(true); await page.reload(); await page.waitForSelector('#results .card');
     eq(await page.locator('#results .card').count(), 24, 'offline reload renders 24 cards');
