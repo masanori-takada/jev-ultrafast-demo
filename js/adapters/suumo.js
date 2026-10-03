@@ -23,7 +23,7 @@ export function parseSuumo(text) {
   p.wantDetail = /詳細/.test(text); p.wantFav = /お気に入り/.test(text);
   return p;
 }
-export const suumoInstr = (p) => `Jev への指示（英語化）: On suumo.jp/sp, apply the filters (${p.intents.map((i) => i.label ? `${i.label}=${i.raw || i.text}` : i.raw || i.text).join(', ')}), run the search, open the first result's detail page and tap お気に入り. Never submit any inquiry form. (UNVERIFIED recipe)`;
+export const suumoInstr = (p) => `自動操作の内容（英語）: On suumo.jp/sp, apply the filters (${p.intents.map((i) => i.label ? `${i.label}=${i.raw || i.text}` : i.raw || i.text).join(', ')}), run the search, open the first result's detail page and tap お気に入り. Never submit any inquiry form. (UNVERIFIED recipe)`;
 
 /** Steps: generic filters + search, then recipe-specific detail / favorite. */
 export function suumoSteps(p, ctx = {}) {

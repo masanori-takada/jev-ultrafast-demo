@@ -33,7 +33,7 @@ export function parsePrompt(text) {
 }
 
 export function instrText(p) {
-  return `Jev への指示（英語化）: Set エリア to ${p.area}, 間取り to ${p.layout}, 賃料上限 to ${p.rent}, then click 'この条件で検索'. Click '物件の詳細を見る' on the first result, then click お気に入り on that property. Then click '空室状況を問い合わせる'. In the inquiry form, fill お名前 = ${p.name}, メールアドレス = ${p.email}, お問い合わせ内容 = ${p.body} Then do NOT click '内容を送信する（デモ）' (skipped for safety). When the inquiry form is filled in, DONE.`;
+  return `自動操作の内容（英語）: Set エリア to ${p.area}, 間取り to ${p.layout}, 賃料上限 to ${p.rent}, then click 'この条件で検索'. Click '物件の詳細を見る' on the first result, then click お気に入り on that property. Then click '空室状況を問い合わせる'. In the inquiry form, fill お名前 = ${p.name}, メールアドレス = ${p.email}, お問い合わせ内容 = ${p.body} Then do NOT click '内容を送信する（デモ）' (skipped for safety). When the inquiry form is filled in, DONE.`;
 }
 
 const $ = (s) => document.querySelector(s);

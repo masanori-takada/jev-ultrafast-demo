@@ -14,7 +14,7 @@ const lab = (c, fallback) => shortGroup(c.group || c.label) || fallback;
 export function englishize(parsed) {
   const parts = parsed.intents.map((i) => i.kind === 'num' ? `set ${i.label || 'the numeric filter'} ${i.op === 'max' ? '(max) ' : i.op === 'min' ? '(min) ' : ''}to ${i.raw}` :
     i.kind === 'sort' ? `sort by ${i.text}` : i.kind === 'pair' ? `set ${i.label} to ${i.text}` : `select or search '${i.text}'`);
-  return `Jev への指示（英語化）: ${parts.length ? parts.join(', then ') : 'no recognizable filters'}. Then click the search/apply button. Never click purchase / apply / submit / login / payment controls (logged as SKIP).`;
+  return `自動操作の内容（英語）: ${parts.length ? parts.join(', then ') : 'no recognizable filters'}. Then click the search/apply button. Never click purchase / apply / submit / login / payment controls (logged as SKIP).`;
 }
 
 async function pick(eng, intent, ctx) {
@@ -24,7 +24,7 @@ async function pick(eng, intent, ctx) {
     const cands = r.list.slice(0, 5).map((x, i) => ({ id: `k${i}`, description: describeControl(x.c), x }));
     const a = await askJev({ key: ctx.jevKey, url: eng.win.location.origin + eng.win.location.pathname, intent: intent.text || intent.label || intent.raw, candidates: cands, fetchFn: ctx.fetchFn });
     const chosen = a && cands.find((c) => c.id === a.id);
-    if (chosen) { eng.note(`Jev判定: ${chosen.description}`); return { best: chosen.x, jev: true }; }
+    if (chosen) { eng.note(`AI判断: ${chosen.description}`); return { best: chosen.x, jev: true }; }
   }
   if (r.best && r.best.score >= 0.45) return { best: r.best };
   return { best: null };

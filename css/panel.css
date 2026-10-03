@@ -128,3 +128,14 @@
 #panel[data-dock] .card { border-radius: 0; height: 100%; }
 #panel .build { flex: none; padding: 4px 12px 6px; font-size: 10px; color: var(--p-muted); text-align: right; border-top: 1px solid rgba(255,255,255,.06); }
 #panel .status-link { color: var(--p-blue); font-size: 11px; margin-left: 4px; }
+/* friendly entry points (no jargon) */
+#panel .guide-link { display: inline-flex; align-items: center; min-height: 36px; margin-top: 2px; color: var(--p-link); font-size: 12px; text-decoration: none; }
+#panel .guide-link:hover { text-decoration: underline; }
+#panel .notice { display: flex; align-items: center; gap: 4px; padding: 0 4px 0 12px; min-height: 44px; background: #1b2140; border-bottom: 1px solid rgba(255,255,255,.08); flex: none; }
+#panel .notice a { flex: 1; display: flex; align-items: center; min-height: 44px; color: #b9c6ff; font-size: 12px; font-weight: 700; text-decoration: none; }
+#panel .notice button { all: unset; cursor: pointer; width: 44px; height: 44px; display: grid; place-items: center; color: var(--p-muted); font-size: 13px; }
+#panel .notice button:focus-visible, #panel .notice a:focus-visible, #panel .guide-link:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+#panel .handoff { padding: 8px 12px 4px; flex: none; }
+#panel .handoff-btn { width: 100%; min-height: 52px; font-size: 14px; background: transparent; border: 1px solid var(--p-link); color: var(--p-link); }
+#panel .handoff-btn[data-primary] { background: var(--p-blue); border-color: var(--p-blue); color: #fff; }
+#panel .handoff .hint { margin: 4px 0 0; font-size: 11px; color: var(--p-muted); text-align: center; }

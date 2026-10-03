@@ -8,13 +8,16 @@ const CART_JA = /カートに入れる|カートに追加|カートへ/;
 const EN = /\b(buy|bought|purchase|purchases|check ?out|apply|applying|application|submit|sign ?in|sign ?out|sign ?up|log ?in|log ?out|logout|login|register|registration|subscribe|unsubscribe|pay|pays|payment|payments|billing|delete|remove|trash|erase|destroy|send|sending|inquiry|inquire|inquiries|enquiry|enquire|enquiries|contact|book|booking|reserve|reservation|enrol+|donate|confirm|proceed|order|orders|ordering|continue to (?:pay|checkout|order)|complete (?:order|purchase))\b/i;
 const EN_CART = /\badd to (?:cart|bag|basket|trolley)\b|\bto (?:cart|basket)\b/i;
 const EN_APPLY_FILTER = /\bapply\s+(?:filters?|changes|selection|sort|refinements?)\b/i;
+// proxy mode only: a favorite saved here would land on the proxy origin, not in the person's account (policy.noFavorite)
+const FAV = /お気に入り|ウォッチ|いいね|キープ|[♡♥❤]|favou?rite|wish ?list|watch ?list|\blike\b/i;
 const ZW = /[\u00ad\u200b-\u200f\u2028-\u202f\u2060\ufeff]/g;
 
 /** @returns {string|null} reason when the label is blocked. */
-export function blockedLabel(label, { allowCart = false, allow = [] } = {}) {
+export function blockedLabel(label, { allowCart = false, allow = [], noFavorite = false } = {}) {
   let t = norm(String(label ?? '').replace(ZW, ''));
   if (!t) return null;
   if (allow.some((re) => re.test(t))) return null;
+  if (noFavorite && FAV.test(t)) return 'favorite';
   const ja = t.replace(/\s+/g, '');
   // harmless uses of risky words: sorting ("Sort order", "order by"), applying filters
   const en = t.replace(/\bsort(?:ed|ing)?\s+(?:by\s+)?order\b/gi, ' ').replace(/\border\s+by\b/gi, ' ').replace(EN_APPLY_FILTER, ' ');

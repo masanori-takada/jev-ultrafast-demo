@@ -51,11 +51,12 @@ export function findByText(texts, { root = document, sel = CLICKABLE, exactOnly 
 }
 const area = (e) => { const r = e.getBoundingClientRect(); return r.width * r.height; };
 
-export function createEngine({ panel, doc = document, speed = 1, shield = false, persistKey = null, reducedMotion } = {}) {
+export function createEngine({ panel, doc = document, speed = 1, shield = false, persistKey = null, reducedMotion, noFavorite = false } = {}) {
   const win = doc.defaultView;
   const reduce = reducedMotion ?? !!win.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const glideMs = reduce ? 60 : 260;
-  let policy = { allowCart: false, allow: [] };
+  let policy = { allowCart: false, allow: [], noFavorite };
+  const skipRow = (el, label) => { if (eng.blocked(el) === 'favorite') { eng.logRow('SKIP', 'お気に入りは本物のサイトで（ボタンを表示）'); panel?.showHandoff?.(); } else eng.logRow('SKIP', skipLabel(label)); };
   let controller = null, t0 = 0, timerId = 0, running = false, cursorEl = null, shieldEl = null, rowLogged = false, lastTimerMs = 0;
   const store = () => { try { return win.sessionStorage; } catch { return null; } };
 
@@ -102,15 +103,15 @@ export function createEngine({ panel, doc = document, speed = 1, shield = false,
         borderRadius: '50%', border: '2px solid #2f6bff', zIndex: '2147483645', pointerEvents: 'none', transition: 'transform .4s, opacity .4s' });
       doc.body.appendChild(d); requestAnimationFrame(() => { d.style.transform = 'scale(2.2)'; d.style.opacity = '0'; }); setTimeout(() => d.remove(), 450);
     },
-    setPolicy(p) { policy = { allowCart: false, allow: [], ...p }; },
+    setPolicy(p) { policy = { allowCart: false, allow: [], noFavorite, ...p }; },
     /** Safety denylist check (purchase/submit/login/...); see generic/safety.js */
     blocked(el) { return blockedElement(el, policy); },
     blockedForm(form) { return blockedForm(form, policy); },
     /** Show the cursor on a control and log a SKIP row without clicking it. */
-    async skip(el, label) { if (el) await eng.glideTo(el); eng.logRow('SKIP', skipLabel(label)); },
+    async skip(el, label) { if (el) await eng.glideTo(el); skipRow(el, label); },
     async settle(ms = 220) { await sleep(ms / speed, controller?.signal); },
     async click(el, label) {
-      if (eng.blocked(el)) { eng.logRow('SKIP', skipLabel(label)); return false; }
+      if (eng.blocked(el)) { skipRow(el, label); return false; }
       await eng.glideTo(el); eng.ripple(el);
       eng.logRow('CLICK', label);
       el.click();
@@ -119,7 +120,7 @@ export function createEngine({ panel, doc = document, speed = 1, shield = false,
     async check(el, label, want = true) {
       if (el.checked === want) return false;
       const target = el.matches?.('input') && !isVisible(el) && el.labels?.[0] ? el.labels[0] : el;
-      if (eng.blocked(target)) { eng.logRow('SKIP', skipLabel(label)); return false; }
+      if (eng.blocked(target)) { skipRow(target, label); return false; }
       await eng.glideTo(target); eng.ripple(target);
       eng.logRow('CLICK', label);
       target.click();
@@ -136,7 +137,7 @@ export function createEngine({ panel, doc = document, speed = 1, shield = false,
       el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true }));
     },
     async type(el, text, label, perChar = 35) {
-      if (eng.blocked(el)) { eng.logRow('SKIP', skipLabel(label)); return false; }
+      if (eng.blocked(el)) { skipRow(el, label); return false; }
       await eng.glideTo(el); eng.ripple(el);
       eng.logRow('TYPE_TEXT', label);
       el.focus?.();
